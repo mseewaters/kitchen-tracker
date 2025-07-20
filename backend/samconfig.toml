@@ -1,0 +1,37 @@
+version = 0.1
+
+# Development Environment
+[dev.deploy.parameters]
+stack_name = "kitchen-tracker-dev"
+resolve_s3 = true
+s3_prefix = "kitchen-tracker-dev"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = [
+    "Environment=dev"
+]
+
+# Production Environment  
+[prod.deploy.parameters]
+stack_name = "kitchen-tracker-prod"
+resolve_s3 = true
+s3_prefix = "kitchen-tracker-prod"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = [
+    "Environment=prod"
+]
+
+# Keep default as prod for backward compatibility
+[default.deploy.parameters]
+stack_name = "kitchen-tracker"
+resolve_s3 = true
+s3_prefix = "kitchen-tracker"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []

@@ -1,0 +1,21 @@
+{
+  "name": "kitchen-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && sam local start-api",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && sam build",
+    "test:frontend": "cd frontend && npm run test:unit",
+    "test:backend": "cd backend && pytest",
+    "test": "npm run test:frontend && npm run test:backend",
+    "deploy:dev": "cd backend && sam deploy --config-env dev",
+    "deploy:prod": "cd backend && sam deploy --config-env prod",
+    "setup": "cd frontend && npm install && cd ../backend && pip install -r src/kitchen_tracker/requirements.txt"
+  },
+  "description": "kitchen-tracker - Full-stack serverless application",
+  "keywords": ["serverless", "vue", "lambda", "dynamodb"],
+  "author": "",
+  "license": "ISC"
+}
