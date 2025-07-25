@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: kitchen-tracker serverless backend
+Description: kitchen-tracker serverless backend (basic version)
 
 Globals:
   Function:
@@ -10,14 +10,11 @@ Globals:
     Environment:
       Variables:
         ITEMS_TABLE: !Ref ItemsTable
-        USERS_TABLE: !Ref UsersTable
-        COGNITO_USER_POOL_ID: !Ref UserPool
-        COGNITO_CLIENT_ID: !Ref UserPoolClient
-        JWT_SECRET: "your-jwt-secret-key"
+        HOUSEHOLD_ID: !Sub "${AWS::StackName}-household"
   Api:
     Cors:
       AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
       AllowOrigin: "'*'"
 
 Resources:
@@ -28,22 +25,81 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.13
       Events:
+        # Root endpoint
         RootApi:
           Type: Api
           Properties:
             Path: /
-            Method: ANY
-        ProxyApi:
+            Method: GET
+        # Health endpoints
+        HealthItems:
           Type: Api
           Properties:
-            Path: /{proxy+}
+            Path: /health/items
             Method: ANY
+        HealthComplete:
+          Type: Api
+          Properties:
+            Path: /health/complete
+            Method: POST
+        HealthToday:
+          Type: Api
+          Properties:
+            Path: /health/today
+            Method: GET
+        # Person endpoints
+        PeopleList:
+          Type: Api
+          Properties:
+            Path: /people
+            Method: GET
+        PeopleCreate:
+          Type: Api
+          Properties:
+            Path: /people
+            Method: POST
+        PersonHealth:
+          Type: Api
+          Properties:
+            Path: /people/{person_id}/health
+            Method: ANY
+        # Pet endpoints
+        PetList:
+          Type: Api
+          Properties:
+            Path: /pets
+            Method: GET
+        PetSetup:
+          Type: Api
+          Properties:
+            Path: /pets/setup
+            Method: POST
+        PetComplete:
+          Type: Api
+          Properties:
+            Path: /pets/complete
+            Method: POST
+        PetToday:
+          Type: Api
+          Properties:
+            Path: /pets/today
+            Method: GET
+        # Meal endpoints  
+        MealList:
+          Type: Api
+          Properties:
+            Path: /meals
+            Method: GET
+        MealSetup:
+          Type: Api
+          Properties:
+            Path: /meals/setup
+            Method: POST
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemsTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref UsersTable
 
+  # Simple DynamoDB table
   ItemsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -60,45 +116,11 @@ Resources:
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
 
-  UsersTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub "${AWS::StackName}-Users"
-      AttributeDefinitions:
-        - AttributeName: user_id
-          AttributeType: S
-        - AttributeName: email
-          AttributeType: S
-      KeySchema:
-        - AttributeName: user_id
-          KeyType: HASH
-      GlobalSecondaryIndexes:
-        - IndexName: email-index
-          KeySchema:
-            - AttributeName: email
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-      BillingMode: PAY_PER_REQUEST
-
-  UserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: !Sub "${AWS::StackName}-user-pool"
-      UsernameAttributes: [email]
-      AutoVerifiedAttributes: [email]
-
-  UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      UserPoolId: !Ref UserPool
-      ClientName: !Sub "${AWS::StackName}-client"
-      GenerateSecret: false
-      ExplicitAuthFlows:
-        - ALLOW_USER_PASSWORD_AUTH
-        - ALLOW_REFRESH_TOKEN_AUTH
-
 Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  
+  HouseholdId:
+    Description: "Household ID for this deployment"
+    Value: !Sub "${AWS::StackName}-household"
