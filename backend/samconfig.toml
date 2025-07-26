@@ -22,8 +22,10 @@ region = "us-east-1"
 stack_name = "kitchen-tracker-dev"
 s3_prefix = "kitchen-tracker-dev"
 region = "us-east-1"
-confirm_changeset = false
-resolve_s3 = true  # This was missing!
+confirm_changeset = true
+resolve_s3 = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
 parameter_overrides = [
     "Environment=dev"
 ]
@@ -34,7 +36,9 @@ stack_name = "kitchen-tracker-prod"
 s3_prefix = "kitchen-tracker-prod"
 region = "us-east-1"
 confirm_changeset = true
-resolve_s3 = true  # This was missing!
+resolve_s3 = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
 parameter_overrides = [
     "Environment=prod"
 ]
