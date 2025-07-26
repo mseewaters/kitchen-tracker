@@ -1,7 +1,12 @@
 import json
 import os
 from typing import Dict, Any
-from datetime import date
+from datetime import date, datetime, timedelta
+import boto3
+import email
+from email.mime.multipart import MIMEMultipart
+import re
+import requests
 
 from models.trackable_item import TrackableItem, CompletionRecord
 from dal.trackable_item_repository import TrackableItemRepository
@@ -481,9 +486,232 @@ def handle_person_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> D
         }
 
 def handle_meal_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
-    """Handle meal-related endpoints (placeholder for now)"""
-    return {
-        'statusCode': 200,
-        'headers': headers,
-        'body': json.dumps({'message': 'Meal endpoints coming soon!'})
-    }
+    """Handle meal-related endpoints using MealRepository"""
+    from models.meal import Meal
+    from dal.meal_repository import MealRepository
+    
+    household_id = os.environ.get('HOUSEHOLD_ID')
+    if not household_id:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': 'Household ID not configured'})
+        }
+    
+    path = event.get('path', '')
+    method = event.get('httpMethod', '')
+    meal_repo = MealRepository()  # Use dedicated repository
+    
+    try:
+        # POST /meals/setup - Create new meal
+        if path == '/meals/setup' and method == 'POST':
+            body = json.loads(event.get('body', '{}'))
+            
+            # Calculate week_of from delivery_date
+            delivery_date = body.get('delivery_date')
+            week_of = calculate_week_of(delivery_date) if delivery_date else None
+            
+            meal = Meal(
+                name=body['name'],
+                household_id=household_id,
+                week_of=week_of,
+                recipe_url=body.get('recipe_link'),
+                delivery_date=delivery_date
+            )
+            
+            # Mark as delivered if we have a delivery date
+            if delivery_date:
+                meal.mark_delivered(delivery_date)
+            
+            success = meal_repo.create_meal(meal)
+            if success:
+                return {
+                    'statusCode': 201,
+                    'headers': headers,
+                    'body': json.dumps(meal.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Failed to create meal'})
+                }
+        
+        # GET /meals - Get all meals (optionally by week)
+        elif path == '/meals' and method == 'GET':
+            query_params = event.get('queryStringParameters') or {}
+            week_of = query_params.get('week_of')
+            
+            meals = meal_repo.get_household_meals(household_id, week_of)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps([meal.to_dict() for meal in meals])
+            }
+        
+        else:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({'error': 'Meal endpoint not found'})
+            }
+            
+    except json.JSONDecodeError:
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({'error': 'Invalid JSON'})
+        }
+    except KeyError as e:
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({'error': f'Missing required field: {str(e)}'})
+        }
+
+def email_lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    """
+    Handle SES email events - parse Home Chef emails and extract meal data
+    """
+    print(f"SES event received: {json.dumps(event)}")
+    
+    try:
+        # Get S3 details from the SES event
+        for record in event['Records']:
+            if record['eventSource'] == 'aws:ses':
+                bucket = os.environ['EMAIL_BUCKET'] 
+                key = record['ses']['mail']['messageId']
+                
+                # Read email from S3
+                s3 = boto3.client('s3')
+                response = s3.get_object(Bucket=bucket, Key=key)
+                raw_email = response['Body'].read().decode('utf-8')
+                
+                print(f"Email content length: {len(raw_email)}")
+                
+                # Parse the email for Home Chef meals
+                meals = parse_homechef_email(raw_email)
+                print(f"Extracted {len(meals)} meals: {meals}")
+
+                # After parsing the email, add this:
+                if meals:
+                    api_url = os.environ['API_URL']
+                    success = store_meals_via_api(meals, api_url)
+                    print(f"Meals storage {'successful' if success else 'failed'}")
+                
+    except Exception as e:
+        print(f"Error processing email: {str(e)}")
+    
+    return {'statusCode': 200}
+
+def parse_homechef_email(raw_email: str) -> list:
+    """Parse Home Chef email and extract meal information with links"""
+    meals = []
+    
+    # Parse the email to get HTML content
+    email_msg = email.message_from_string(raw_email)
+    html_content = ""
+    
+    # Find HTML part and decode properly
+    if email_msg.is_multipart():
+        for part in email_msg.walk():
+            if part.get_content_type() == "text/html":
+                # Get the payload and decode it
+                payload = part.get_payload(decode=True)
+                if payload:
+                    html_content = payload.decode('utf-8', errors='ignore')
+                    break
+    
+    if not html_content:
+        print("No HTML content found in email")
+        return meals
+    
+    print(f"HTML content found, length: {len(html_content)}")
+    
+    # Extract delivery date from the actual email pattern
+    delivery_date = None
+    # Pattern from your actual email: "scheduled to arrive by end of the day on <strong>Thursday, July 3</strong>"
+    date_pattern = r'scheduled to arrive by end of the day on\s*<strong>([^<]+)</strong>'
+    date_match = re.search(date_pattern, html_content, re.IGNORECASE)
+    if date_match:
+        delivery_date = date_match.group(1).strip()
+        print(f"Found delivery date: {delivery_date}")
+    
+    # Extract meals using the actual Home Chef link pattern
+    # Pattern: <a href="link" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none;">Meal Name</a>
+    meal_pattern = r'<a\s+href="([^"]*)"[^>]*style="[^"]*color:\s*#4a4a4a[^"]*font-weight:\s*bold[^"]*"[^>]*>([^<]+)</a>'
+    meal_matches = re.findall(meal_pattern, html_content, re.IGNORECASE | re.DOTALL)
+    
+    for link, meal_name in meal_matches:
+        # Clean up meal name
+        meal_name = meal_name.strip().replace('\r\n', ' ').replace('\n', ' ').replace('  ', ' ')
+        
+        # Skip obviously non-meal links
+        if len(meal_name) > 3 and 'recipe' not in meal_name.lower():
+            meals.append({
+                'name': meal_name,
+                'delivery_date': delivery_date,
+                'recipe_link': link,
+                'is_tracking_link': 'click.e.homechef.com' in link
+            })
+            print(f"Found meal: {meal_name}")
+            print(f"  Link: {link}")
+    
+    print(f"Total meals extracted: {len(meals)}")
+    return meals
+
+def store_meals_via_api(meals: list, api_url: str) -> bool:
+    """Store parsed meals using our own API"""
+    try:
+        # For now, store each meal individually
+        # You could batch this later
+        for meal in meals:
+            payload = {
+                'name': meal['name'],
+                'delivery_date': meal['delivery_date'],
+                'recipe_link': meal['recipe_link'],
+                'source': 'home_chef_email'
+            }
+            
+            response = requests.post(f"{api_url}/meals/setup", 
+                                   json=payload, 
+                                   timeout=30)
+            
+            if response.status_code not in [200, 201]:
+                print(f"Failed to store meal {meal['name']}: {response.status_code}")
+                return False
+            else:
+                print(f"Successfully stored meal: {meal['name']}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error storing meals via API: {str(e)}")
+        return False
+    
+def calculate_week_of(delivery_date_str: str) -> str:
+    """Calculate the Monday of the delivery week from delivery date string"""
+    try:
+        # Parse "Thursday, July 3" format - need to add year
+        current_year = datetime.now().year
+        
+        # Handle different date formats
+        if ',' in delivery_date_str:
+            # "Thursday, July 3" format
+            date_part = delivery_date_str.split(', ')[1]  # "July 3"
+            date_obj = datetime.strptime(f"{date_part} {current_year}", "%B %d %Y")
+        else:
+            # Fallback for other formats
+            date_obj = datetime.strptime(f"{delivery_date_str} {current_year}", "%B %d %Y")
+        
+        # Calculate Monday of that week
+        monday = date_obj - timedelta(days=date_obj.weekday())
+        return monday.strftime("%Y-%m-%d")
+        
+    except Exception as e:
+        print(f"Error calculating week_of from {delivery_date_str}: {e}")
+        # Fallback to current week's Monday
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+        return monday.strftime("%Y-%m-%d")
+    

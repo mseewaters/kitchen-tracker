@@ -115,6 +115,52 @@ Resources:
         - AttributeName: item_id
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+  
+  EmailProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/kitchen_tracker/
+      Handler: app.email_lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          EMAIL_BUCKET: !Ref EmailStorageBucket
+          API_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+          HOUSEHOLD_ID: !Sub "${AWS::StackName}-household"
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref EmailStorageBucket
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: "*"
+
+  EmailStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-emails"
+
+  EmailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref EmailStorageBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "AllowSESPuts"
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${EmailStorageBucket}/*"
+            Condition:
+              StringEquals:
+                aws:Referer: !Ref "AWS::AccountId"
+
 
 Outputs:
   ApiUrl:

@@ -1,0 +1,13 @@
+{
+  "Records": [
+    {
+      "eventSource": "aws:ses",
+      "eventVersion": "1.0",
+      "ses": {
+        "mail": {
+          "messageId": "test-message-123"
+        }
+      }
+    }
+  ]
+}
