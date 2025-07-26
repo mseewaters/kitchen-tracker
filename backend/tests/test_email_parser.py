@@ -48,15 +48,35 @@ class TestEmailParser:
     
     def test_parse_homechef_email_with_real_structure(self):
         """Test parsing a Home Chef email with the actual structure"""
-        # Sample HTML content based on the real Home Chef email structure
-        sample_html_email = '''
-        Content-Type: text/html; charset="utf-8"
-        Content-Transfer-Encoding: base64
+        # Create a properly structured multipart email
+        sample_html_content = '''<html>
+<head><title>Your Home Chef order is on its way!</title></head>
+<body>
+<p>Hi Marjorie,</p>
+<p>Your Home Chef order is on its way and is scheduled to arrive by end of the day on <strong>Thursday, July 3</strong>.</p>
+<a href="https://click.e.homechef.com/?qs=test1" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none">Margherita Chicken</a>
+<a href="https://click.e.homechef.com/?qs=test2" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none">Dijon and Dill Cream Trout</a>
+</body>
+</html>'''
         
-        PGh0bWw+DQo8aGVhZD4NCjx0aXRsZT5Zb3VyIEhvbWUgQ2hlZiBvcmRlciBpcyBvbiBpdHMgd2F5ITwvdGl0bGU+DQo8L2hlYWQ+DQo8Ym9keT4NCjxwPkhpIE1hcmpvcmllLDwvcD4NCjxwPllvdXIgSG9tZSBDaGVmIG9yZGVyIGlzIG9uIGl0cyB3YXkgYW5kIGlzIHNjaGVkdWxlZCB0byBhcnJpdmUgYnkgZW5kIG9mIHRoZSBkYXkgb24gPHN0cm9uZz5UaHVyc2RheSwgSnVseSAzPC9zdHJvbmc+LjwvcD4NCjxhIGhyZWY9Imh0dHBzOi8vY2xpY2suZS5ob21lY2hlZi5jb20vP3FzPXRlc3QxIiB0YXJnZXQ9Il9ibGFuayIgc3R5bGU9ImNvbG9yOiM0YTRhNGE7IGZvbnQtd2VpZ2h0OmJvbGQ7IHRleHQtZGVjb3JhdGlvbjpub25lIj5NYXJnaGVyaXRhIENoaWNrZW48L2E+DQo8YSBocmVmPSJodHRwczovL2NsaWNrLmUuaG9tZWNoZWYuY29tLz9xcz10ZXN0MiIgdGFyZ2V0PSJfYmxhbmsiIHN0eWxlPSJjb2xvcjojNGE0YTRhOyBmb250LXdlaWdodDpib2xkOyB0ZXh0LWRlY29yYXRpb246bm9uZSI+RGlqb24gYW5kIERpbGwgQ3JlYW0gVHJvdXQ8L2E+DQo8L2JvZHk+DQo8L2h0bWw+
-        '''
+        sample_email = f'''From: noreply@homechef.com
+To: user@example.com
+Subject: Your Home Chef order is on its way!
+Content-Type: multipart/alternative; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+Plain text version here
+
+--boundary123
+Content-Type: text/html; charset="utf-8"
+
+{sample_html_content}
+
+--boundary123--'''
         
-        meals = parse_homechef_email(sample_html_email)
+        meals = parse_homechef_email(sample_email)
         
         assert len(meals) == 2
         assert meals[0]['name'] == 'Margherita Chicken'
@@ -69,42 +89,60 @@ class TestEmailParser:
     
     def test_parse_homechef_email_no_html(self):
         """Test parsing email with no HTML content"""
-        text_only_email = '''
-        From: test@example.com
-        To: user@example.com
-        Subject: Test
-        Content-Type: text/plain
-        
-        This is a plain text email with no HTML content.
-        '''
+        text_only_email = '''From: test@example.com
+To: user@example.com
+Subject: Test
+Content-Type: text/plain
+
+This is a plain text email with no HTML content.'''
         
         meals = parse_homechef_email(text_only_email)
         assert meals == []
     
     def test_parse_homechef_email_no_delivery_date(self):
         """Test parsing email without delivery date"""
-        html_without_date = '''
-        Content-Type: text/html; charset="utf-8"
-        Content-Transfer-Encoding: base64
+        html_content = '''<html><body>
+<a href="https://click.e.homechef.com/?qs=test" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none">Test Meal</a>
+</body></html>'''
         
-        PGh0bWw+DQo8Ym9keT4NCjxhIGhyZWY9Imh0dHBzOi8vY2xpY2suZS5ob21lY2hlZi5jb20vP3FzPXRlc3QiIHRhcmdldD0iX2JsYW5rIiBzdHlsZT0iY29sb3I6IzRhNGE0YTsgZm9udC13ZWlnaHQ6Ym9sZDsgdGV4dC1kZWNvcmF0aW9uOm5vbmUiPlRlc3QgTWVhbDwvYT4NCjwvYm9keT4NCjwvaHRtbD4=
-        '''
+        sample_email = f'''From: noreply@homechef.com
+To: user@example.com
+Subject: Test
+Content-Type: multipart/alternative; boundary="boundary123"
+
+--boundary123
+Content-Type: text/html; charset="utf-8"
+
+{html_content}
+
+--boundary123--'''
         
-        meals = parse_homechef_email(html_without_date)
+        meals = parse_homechef_email(sample_email)
         assert len(meals) == 1
         assert meals[0]['name'] == 'Test Meal'
         assert meals[0]['delivery_date'] is None
     
     def test_parse_homechef_email_filters_non_meal_links(self):
         """Test that non-meal links are filtered out"""
-        html_with_nav_links = '''
-        Content-Type: text/html; charset="utf-8"
-        Content-Transfer-Encoding: base64
+        html_content = '''<html><body>
+<a href="https://click.e.homechef.com/?qs=meal" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none">Actual Meal Name</a>
+<a href="https://click.e.homechef.com/?qs=menu" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none">Menu</a>
+<a href="https://click.e.homechef.com/?qs=account" target="_blank" style="color:#4a4a4a; font-weight:bold; text-decoration:none">Account</a>
+</body></html>'''
         
-        PGh0bWw+DQo8Ym9keT4NCjxhIGhyZWY9Imh0dHBzOi8vY2xpY2suZS5ob21lY2hlZi5jb20vP3FzPW1lYWwiIHRhcmdldD0iX2JsYW5rIiBzdHlsZT0iY29sb3I6IzRhNGE0YTsgZm9udC13ZWlnaHQ6Ym9sZDsgdGV4dC1kZWNvcmF0aW9uOm5vbmUiPkFjdHVhbCBNZWFsIE5hbWU8L2E+DQo8YSBocmVmPSJodHRwczovL2NsaWNrLmUuaG9tZWNoZWYuY29tLz9xcz1tZW51IiB0YXJnZXQ9Il9ibGFuayIgc3R5bGU9ImNvbG9yOiM0YTRhNGE7IGZvbnQtd2VpZ2h0OmJvbGQ7IHRleHQtZGVjb3JhdGlvbjpub25lIj5NZW51PC9hPg0KPGEgaHJlZj0iaHR0cHM6Ly9jbGljay5lLmhvbWVjaGVmLmNvbS8/cXM9YWNjb3VudCIgdGFyZ2V0PSJfYmxhbmsiIHN0eWxlPSJjb2xvcjojNGE0YTRhOyBmb250LXdlaWdodDpib2xkOyB0ZXh0LWRlY29yYXRpb246bm9uZSI+QWNjb3VudDwvYT4NCjwvYm9keT4NCjwvaHRtbD4=
-        '''
+        sample_email = f'''From: noreply@homechef.com
+To: user@example.com
+Subject: Test
+Content-Type: multipart/alternative; boundary="boundary123"
+
+--boundary123
+Content-Type: text/html; charset="utf-8"
+
+{html_content}
+
+--boundary123--'''
         
-        meals = parse_homechef_email(html_with_nav_links)
+        meals = parse_homechef_email(sample_email)
         
         # Should only extract the actual meal, not Menu/Account links
         assert len(meals) == 1
@@ -112,16 +150,24 @@ class TestEmailParser:
     
     def test_parse_homechef_email_handles_malformed_html(self):
         """Test parsing email with malformed HTML"""
-        malformed_html = '''
-        Content-Type: text/html; charset="utf-8"
+        malformed_content = '''<html><body>
+<a href="https://test.com" style="color:#4a4a4a; font-weight:bold;">Incomplete Meal Name
+<p>Some other content</p>
+</body></html>'''
         
-        <html><body>
-        <a href="https://test.com" style="color:#4a4a4a; font-weight:bold;">Incomplete Meal Name
-        <p>Some other content</p>
-        </body></html>
-        '''
+        sample_email = f'''From: test@example.com
+To: user@example.com
+Subject: Test
+Content-Type: multipart/alternative; boundary="boundary123"
+
+--boundary123
+Content-Type: text/html; charset="utf-8"
+
+{malformed_content}
+
+--boundary123--'''
         
         # Should not crash and return empty results for malformed content
-        meals = parse_homechef_email(malformed_html)
+        meals = parse_homechef_email(sample_email)
         assert isinstance(meals, list)
         # May or may not find meals depending on how malformed, but shouldn't crash

@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: kitchen-tracker serverless backend (basic version)
+Description: kitchen-tracker serverless backend
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+    Description: Deployment environment
 
 Globals:
   Function:
@@ -11,6 +18,7 @@ Globals:
       Variables:
         ITEMS_TABLE: !Ref ItemsTable
         HOUSEHOLD_ID: !Sub "${AWS::StackName}-household"
+        ENVIRONMENT: !Ref Environment
   Api:
     Cors:
       AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
@@ -31,6 +39,7 @@ Resources:
           Properties:
             Path: /
             Method: GET
+        
         # Health endpoints
         HealthItems:
           Type: Api
@@ -47,6 +56,7 @@ Resources:
           Properties:
             Path: /health/today
             Method: GET
+        
         # Person endpoints
         PeopleList:
           Type: Api
@@ -63,6 +73,7 @@ Resources:
           Properties:
             Path: /people/{person_id}/health
             Method: ANY
+        
         # Pet endpoints
         PetList:
           Type: Api
@@ -84,6 +95,7 @@ Resources:
           Properties:
             Path: /pets/today
             Method: GET
+        
         # Meal endpoints  
         MealList:
           Type: Api
@@ -95,11 +107,103 @@ Resources:
           Properties:
             Path: /meals/setup
             Method: POST
+        MealCook:
+          Type: Api
+          Properties:
+            Path: /meals/cook
+            Method: POST
+        MealRecords:
+          Type: Api
+          Properties:
+            Path: /meals/records
+            Method: GET
+        MealById:
+          Type: Api
+          Properties:
+            Path: /meals/{meal_id}
+            Method: GET
+        MealStatusUpdate:
+          Type: Api
+          Properties:
+            Path: /meals/{meal_id}/status
+            Method: PUT
+        
+        # Task endpoints
+        TaskList:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: GET
+        TaskSetup:
+          Type: Api
+          Properties:
+            Path: /tasks/setup
+            Method: POST
+        TaskComplete:
+          Type: Api
+          Properties:
+            Path: /tasks/complete
+            Method: POST
+        TaskToday:
+          Type: Api
+          Properties:
+            Path: /tasks/today
+            Method: GET
+        TaskOverdue:
+          Type: Api
+          Properties:
+            Path: /tasks/overdue
+            Method: GET
+        TaskCompleted:
+          Type: Api
+          Properties:
+            Path: /tasks/completed
+            Method: GET
+        TaskById:
+          Type: Api
+          Properties:
+            Path: /tasks/{task_id}
+            Method: GET
+        TaskStatusUpdate:
+          Type: Api
+          Properties:
+            Path: /tasks/{task_id}/status
+            Method: PUT
+        
+        # Dashboard endpoints
+        DashboardToday:
+          Type: Api
+          Properties:
+            Path: /dashboard/today
+            Method: GET
+        DashboardOverdue:
+          Type: Api
+          Properties:
+            Path: /dashboard/overdue
+            Method: GET
+        DashboardTrends:
+          Type: Api
+          Properties:
+            Path: /dashboard/trends
+            Method: GET
+        
+        # Quick Complete endpoints
+        UniversalComplete:
+          Type: Api
+          Properties:
+            Path: /complete
+            Method: POST
+        CompletionHistory:
+          Type: Api
+          Properties:
+            Path: /complete/history
+            Method: GET
+      
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemsTable
 
-  # Simple DynamoDB table
+  # DynamoDB table with environment-specific naming
   ItemsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -115,9 +219,16 @@ Resources:
         - AttributeName: item_id
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: kitchen-tracker
   
+  # Email processing (only for prod)
   EmailProcessorFunction:
     Type: AWS::Serverless::Function
+    Condition: IsProd
     Properties:
       CodeUri: src/kitchen_tracker/
       Handler: app.email_lambda_handler
@@ -141,11 +252,16 @@ Resources:
 
   EmailStorageBucket:
     Type: AWS::S3::Bucket
+    Condition: IsProd
     Properties:
       BucketName: !Sub "${AWS::StackName}-emails"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
 
   EmailBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: IsProd
     Properties:
       Bucket: !Ref EmailStorageBucket
       PolicyDocument:
@@ -161,6 +277,8 @@ Resources:
               StringEquals:
                 aws:Referer: !Ref "AWS::AccountId"
 
+Conditions:
+  IsProd: !Equals [!Ref Environment, "prod"]
 
 Outputs:
   ApiUrl:
@@ -170,3 +288,11 @@ Outputs:
   HouseholdId:
     Description: "Household ID for this deployment"
     Value: !Sub "${AWS::StackName}-household"
+  
+  Environment:
+    Description: "Deployment environment"
+    Value: !Ref Environment
+  
+  TableName:
+    Description: "DynamoDB table name"
+    Value: !Ref ItemsTable

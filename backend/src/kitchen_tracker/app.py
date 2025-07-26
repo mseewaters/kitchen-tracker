@@ -13,6 +13,8 @@ from dal.trackable_item_repository import TrackableItemRepository
 from models.pet import Pet, PetCareItem, PetCareRecord
 from dal.pet_repository import PetRepository
 from models.person import Person
+from models.task import TaskItem, TaskCompletionRecord
+from dal.task_repository import TaskRepository
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
@@ -59,10 +61,24 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if path.startswith('/pets'):
             return handle_pet_endpoints(event, headers)
         
-        # Meal endpoints (future)
+        # Meal endpoints
         if path.startswith('/meals'):
             return handle_meal_endpoints(event, headers)
         
+        # Task endpoints
+        if path.startswith('/tasks'):
+            return handle_task_endpoints(event, headers)
+        
+        # Dashboard endpoints
+        if path.startswith('/dashboard'):
+            return handle_dashboard_endpoints(event, headers)
+        
+        
+        # Quick complete endpoints
+        if path.startswith('/complete'):
+            return handle_complete_endpoints(event, headers)
+        
+
         # Default response
         return {
             'statusCode': 404,
@@ -548,7 +564,88 @@ def handle_meal_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> Dic
                 'headers': headers,
                 'body': json.dumps([meal.to_dict() for meal in meals])
             }
+
+        # POST /meals/cook - Record cooking a meal
+        elif path == '/meals/cook' and method == 'POST':
+            from models.meal import MealRecord
+            
+            body = json.loads(event.get('body', '{}'))
+            
+            # Create cooking record
+            meal_record = MealRecord(
+                meal_id=body['meal_id'],
+                household_id=household_id,
+                cooked_by=body.get('cooked_by'),
+                notes=body.get('notes')
+            )
+            
+            success = meal_repo.create_meal_record(meal_record)
+            if success:
+                # Also update the meal status to "cooked"
+                meal_repo.update_meal_status(household_id, body['meal_id'], 'cooked')
+                
+                return {
+                    'statusCode': 201,
+                    'headers': headers,
+                    'body': json.dumps(meal_record.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Failed to record meal cooking'})
+                }
         
+        # GET /meals/records - Get cooking records for all meals or specific meal
+        elif path == '/meals/records' and method == 'GET':
+            query_params = event.get('queryStringParameters') or {}
+            meal_id = query_params.get('meal_id')
+            
+            records = meal_repo.get_meal_records(household_id, meal_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps([record.to_dict() for record in records])
+            }
+        
+        # GET /meals/{meal_id} - Get specific meal by ID
+        elif path.startswith('/meals/') and method == 'GET' and path != '/meals/setup' and path != '/meals/cook' and path != '/meals/records':
+            meal_id = path.split('/meals/')[1]
+            
+            meal = meal_repo.get_meal(household_id, meal_id)
+            if meal:
+                return {
+                    'statusCode': 200,
+                    'headers': headers,
+                    'body': json.dumps(meal.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 404,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Meal not found'})
+                }
+        
+        # PUT /meals/{meal_id}/status - Update meal status
+        elif path.startswith('/meals/') and path.endswith('/status') and method == 'PUT':
+            meal_id = path.split('/meals/')[1].split('/status')[0]
+            body = json.loads(event.get('body', '{}'))
+            
+            success = meal_repo.update_meal_status(household_id, meal_id, body['status'])
+            if success:
+                updated_meal = meal_repo.get_meal(household_id, meal_id)
+                return {
+                    'statusCode': 200,
+                    'headers': headers,
+                    'body': json.dumps(updated_meal.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 404,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Meal not found or update failed'})
+                }
+           
         else:
             return {
                 'statusCode': 404,
@@ -569,6 +666,365 @@ def handle_meal_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> Dic
             'body': json.dumps({'error': f'Missing required field: {str(e)}'})
         }
 
+# Add this function to app.py, after the other handle_*_endpoints functions
+
+def handle_task_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+    """Handle household task-related endpoints"""
+    from models.task import TaskItem, TaskCompletionRecord
+    from dal.task_repository import TaskRepository
+    
+    household_id = os.environ.get('HOUSEHOLD_ID')
+    if not household_id:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': 'Household ID not configured'})
+        }
+    
+    path = event.get('path', '')
+    method = event.get('httpMethod', '')
+    task_repo = TaskRepository()
+    
+    try:
+        # POST /tasks/setup - Create new recurring task
+        if path == '/tasks/setup' and method == 'POST':
+            body = json.loads(event.get('body', '{}'))
+            
+            # Parse frequency configuration
+            frequency_config = {}
+            if body['frequency'] == 'weekly' and 'day_of_week' in body:
+                frequency_config['day_of_week'] = body['day_of_week']
+            elif body['frequency'] == 'monthly' and 'day_of_month' in body:
+                frequency_config['day_of_month'] = body['day_of_month']
+            
+            task = TaskItem(
+                name=body['name'],
+                household_id=household_id,
+                frequency=body['frequency'],
+                frequency_config=frequency_config
+            )
+            
+            success = task_repo.create_task(task)
+            if success:
+                return {
+                    'statusCode': 201,
+                    'headers': headers,
+                    'body': json.dumps(task.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Failed to create task'})
+                }
+        
+        # GET /tasks - Get all household tasks with status
+        elif path == '/tasks' and method == 'GET':
+            statuses = task_repo.get_task_statuses(household_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps([status.to_dict() for status in statuses])
+            }
+        
+        # POST /tasks/complete - Mark task as completed
+        elif path == '/tasks/complete' and method == 'POST':
+            body = json.loads(event.get('body', '{}'))
+            
+            completion = TaskCompletionRecord(
+                task_id=body['task_id'],
+                household_id=household_id,
+                completed_by=body.get('completed_by'),
+                notes=body.get('notes')
+            )
+            
+            success = task_repo.create_task_completion(completion)
+            if success:
+                return {
+                    'statusCode': 201,
+                    'headers': headers,
+                    'body': json.dumps(completion.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Failed to record task completion'})
+                }
+        
+        # GET /tasks/today - Get tasks due today
+        elif path == '/tasks/today' and method == 'GET':
+            due_today = task_repo.get_due_today_tasks(household_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps([status.to_dict() for status in due_today])
+            }
+        
+        # GET /tasks/overdue - Get overdue tasks
+        elif path == '/tasks/overdue' and method == 'GET':
+            overdue = task_repo.get_overdue_tasks(household_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps([status.to_dict() for status in overdue])
+            }
+        
+        # GET /tasks/completed - Get tasks completed today
+        elif path == '/tasks/completed' and method == 'GET':
+            completed = task_repo.get_completed_today_tasks(household_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps(completed)
+            }
+        
+        # GET /tasks/{task_id} - Get specific task with status
+        elif path.startswith('/tasks/') and method == 'GET' and len(path.split('/')) == 3:
+            task_id = path.split('/tasks/')[1]
+            
+            task = task_repo.get_task(household_id, task_id)
+            if task:
+                # Get task with status info
+                statuses = task_repo.get_task_statuses(household_id)
+                task_status = next((s for s in statuses if s.task.task_id == task_id), None)
+                
+                if task_status:
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps(task_status.to_dict())
+                    }
+                else:
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps(task.to_dict())
+                    }
+            else:
+                return {
+                    'statusCode': 404,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Task not found'})
+                }
+        
+        # PUT /tasks/{task_id}/status - Activate/deactivate task
+        elif path.startswith('/tasks/') and path.endswith('/status') and method == 'PUT':
+            task_id = path.split('/tasks/')[1].split('/status')[0]
+            body = json.loads(event.get('body', '{}'))
+            
+            success = task_repo.update_task_status(household_id, task_id, body['is_active'])
+            if success:
+                updated_task = task_repo.get_task(household_id, task_id)
+                return {
+                    'statusCode': 200,
+                    'headers': headers,
+                    'body': json.dumps(updated_task.to_dict())
+                }
+            else:
+                return {
+                    'statusCode': 404,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Task not found or update failed'})
+                }
+        
+        else:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({'error': 'Task endpoint not found'})
+            }
+            
+    except json.JSONDecodeError:
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({'error': 'Invalid JSON'})
+        }
+    except KeyError as e:
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({'error': f'Missing required field: {str(e)}'})
+        }
+
+# Add this function to app.py, after the other handle_*_endpoints functions
+
+def handle_dashboard_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+    """Handle unified dashboard endpoints"""
+    from services.dashboard_service import DashboardService
+    
+    household_id = os.environ.get('HOUSEHOLD_ID')
+    if not household_id:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': 'Household ID not configured'})
+        }
+    
+    path = event.get('path', '')
+    method = event.get('httpMethod', '')
+    dashboard_service = DashboardService()
+    
+    try:
+        # GET /dashboard/today - Main dashboard with all items due today
+        if path == '/dashboard/today' and method == 'GET':
+            dashboard = dashboard_service.get_today_dashboard(household_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps(dashboard.to_dict())
+            }
+        
+        # GET /dashboard/overdue - Summary of overdue items
+        elif path == '/dashboard/overdue' and method == 'GET':
+            overdue_summary = dashboard_service.get_overdue_summary(household_id)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps(overdue_summary)
+            }
+        
+        # GET /dashboard/trends - Completion trends over time
+        elif path == '/dashboard/trends' and method == 'GET':
+            query_params = event.get('queryStringParameters') or {}
+            days = int(query_params.get('days', 7))  # Default to 7 days
+            
+            trends = dashboard_service.get_completion_trends(household_id, days)
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps(trends)
+            }
+        
+        else:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({'error': 'Dashboard endpoint not found'})
+            }
+            
+    except Exception as e:
+        # Enhanced error handling for debugging
+        error_message = str(e)
+        print(f"Dashboard endpoint error: {error_message}")
+        
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': f'Dashboard service error: {error_message}'})
+        }
+
+# Add this function to app.py, after the other handle_*_endpoints functions
+def handle_complete_endpoints(event: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+    """Handle simple tablet completion - tap to complete anything"""
+    
+    household_id = os.environ.get('HOUSEHOLD_ID')
+    if not household_id:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': 'Household ID not configured'})
+        }
+    
+    path = event.get('path', '')
+    method = event.get('httpMethod', '')
+    
+    try:
+        # POST /complete - Simple universal completion
+        if path == '/complete' and method == 'POST':
+            body = json.loads(event.get('body', '{}'))
+            
+            item_id = body['id']
+            item_type = body['type']
+            
+            # Route to appropriate completion endpoint (simple versions)
+            if item_type == 'health':
+                success = _simple_complete_health(item_id, household_id)
+            elif item_type == 'task':
+                success = _simple_complete_task(item_id, household_id)
+            elif item_type == 'pet_care':
+                success = _simple_complete_pet_care(item_id, household_id)
+            else:
+                return {
+                    'statusCode': 400,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Invalid type'})
+                }
+            
+            if success:
+                return {
+                    'statusCode': 200,
+                    'headers': headers,
+                    'body': json.dumps({'success': True, 'item_id': item_id})
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': headers,
+                    'body': json.dumps({'success': False, 'item_id': item_id})
+                }
+        
+        else:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({'error': 'Endpoint not found'})
+            }
+            
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': str(e)})
+        }
+
+
+def _simple_complete_health(item_id: str, household_id: str) -> bool:
+    """Simple health completion - just mark it done"""
+    try:
+        from models.trackable_item import CompletionRecord
+        from dal.trackable_item_repository import TrackableItemRepository
+        
+        repo = TrackableItemRepository()
+        completion = CompletionRecord(item_id=item_id, user_id=household_id)
+        return repo.create_completion_record(completion)
+    except:
+        return False
+
+
+def _simple_complete_task(item_id: str, household_id: str) -> bool:
+    """Simple task completion - just mark it done"""
+    try:
+        from models.task import TaskCompletionRecord
+        from dal.task_repository import TaskRepository
+        
+        repo = TaskRepository()
+        completion = TaskCompletionRecord(task_id=item_id, household_id=household_id)
+        return repo.create_task_completion(completion)
+    except:
+        return False
+
+
+def _simple_complete_pet_care(item_id: str, household_id: str) -> bool:
+    """Simple pet care completion - just mark it done"""
+    try:
+        from models.pet import PetCareRecord
+        from dal.pet_repository import PetRepository
+        
+        repo = PetRepository()
+        
+        # Find the pet for this care item
+        pets = repo.get_household_pets(household_id)
+        for pet in pets:
+            care_items = repo.get_pet_care_items(household_id, pet.pet_id)
+            if any(item.item_id == item_id for item in care_items):
+                completion = PetCareRecord(item_id=item_id, pet_id=pet.pet_id, household_id=household_id)
+                return repo.create_pet_care_record(completion)
+        return False
+    except:
+        return False
+        
 def email_lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Handle SES email events - parse Home Chef emails and extract meal data
@@ -647,7 +1103,18 @@ def parse_homechef_email(raw_email: str) -> list:
         meal_name = meal_name.strip().replace('\r\n', ' ').replace('\n', ' ').replace('  ', ' ')
         
         # Skip obviously non-meal links
-        if len(meal_name) > 3 and 'recipe' not in meal_name.lower():
+        # Common navigation/non-meal terms to exclude
+        excluded_terms = {
+            'menu', 'account', 'recipe', 'contact', 'help', 'support', 
+            'unsubscribe', 'view', 'browse', 'shop', 'order', 'delivery',
+            'preferences', 'settings', 'login', 'sign', 'facebook', 'twitter',
+            'instagram', 'app', 'download'
+        }
+        
+        meal_name_lower = meal_name.lower().strip()
+        is_excluded = any(term in meal_name_lower for term in excluded_terms)
+        
+        if len(meal_name) > 3 and not is_excluded:
             meals.append({
                 'name': meal_name,
                 'delivery_date': delivery_date,
@@ -656,6 +1123,8 @@ def parse_homechef_email(raw_email: str) -> list:
             })
             print(f"Found meal: {meal_name}")
             print(f"  Link: {link}")
+        else:
+            print(f"Filtered out non-meal link: {meal_name}")
     
     print(f"Total meals extracted: {len(meals)}")
     return meals

@@ -1,14 +1,28 @@
+# SAM configuration file for multiple environments
 version = 0.1
+
+[default.global.parameters]
+stack_name = "kitchen-tracker"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-east-1"
 
 # Development Environment
 [dev.deploy.parameters]
 stack_name = "kitchen-tracker-dev"
-resolve_s3 = true
 s3_prefix = "kitchen-tracker-dev"
 region = "us-east-1"
-confirm_changeset = true
-capabilities = "CAPABILITY_IAM"
-image_repositories = []
+confirm_changeset = false  # Auto-confirm for dev
 parameter_overrides = [
     "Environment=dev"
 ]
@@ -16,22 +30,9 @@ parameter_overrides = [
 # Production Environment  
 [prod.deploy.parameters]
 stack_name = "kitchen-tracker-prod"
-resolve_s3 = true
 s3_prefix = "kitchen-tracker-prod"
 region = "us-east-1"
-confirm_changeset = true
-capabilities = "CAPABILITY_IAM"
-image_repositories = []
+confirm_changeset = true  # Require confirmation for prod
 parameter_overrides = [
     "Environment=prod"
 ]
-
-# Keep default as prod for backward compatibility
-[default.deploy.parameters]
-stack_name = "kitchen-tracker"
-resolve_s3 = true
-s3_prefix = "kitchen-tracker"
-region = "us-east-1"
-confirm_changeset = true
-capabilities = "CAPABILITY_IAM"
-image_repositories = []

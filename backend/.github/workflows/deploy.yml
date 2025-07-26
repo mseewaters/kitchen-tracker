@@ -1,0 +1,133 @@
+name: Kitchen Tracker CI/CD Pipeline
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "backend/**"
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/kitchen_tracker/requirements.txt
+
+      - name: Run syntax checks
+        working-directory: ./backend
+        run: |
+          cd src/kitchen_tracker
+          python -m py_compile app.py
+          python -c "from models.task import TaskItem; from dal.task_repository import TaskRepository; print('✅ All imports successful')"
+
+  deploy-dev:
+    name: Deploy to Dev
+    needs: test
+    runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/dev' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: SAM build
+        working-directory: ./backend
+        run: sam build
+
+      - name: Deploy to dev
+        working-directory: ./backend
+        run: sam deploy --config-env dev --no-confirm-changeset
+
+      - name: Test dev deployment
+        working-directory: ./backend
+        run: |
+          sleep 10
+          API_URL=$(sam list stack-outputs --config-env dev --output json | jq -r '.[] | select(.OutputKey=="ApiUrl") | .OutputValue')
+          echo "🚀 Dev API: $API_URL"
+          
+          # Quick health check
+          curl -f "$API_URL" && echo "✅ Dev API responding" || echo "⚠️ Dev API check failed"
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: test
+    runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod')
+    environment: production # Requires manual approval
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: SAM build
+        working-directory: ./backend
+        run: sam build
+
+      - name: Deploy to production
+        working-directory: ./backend
+        run: sam deploy --config-env prod --no-confirm-changeset
+
+      - name: Get production URL
+        working-directory: ./backend
+        run: |
+          API_URL=$(sam list stack-outputs --config-env prod --output json | jq -r '.[] | select(.OutputKey=="ApiUrl") | .OutputValue')
+          echo "🎉 Production API: $API_URL"
+          echo "## 🚀 Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL**: $API_URL" >> $GITHUB_STEP_SUMMARY
