@@ -15,6 +15,41 @@
   --green-success: #22C55E;
   --red-alert: #EF4444;
 
+  /* ===== KITCHEN TRACKER THEME COLORS ===== */
+  --bg-body: #e5e5e5;
+  --bg-container: white;
+  --bg-sidebar: #2c3e50;
+  --bg-tab-nav: #34495e;
+  --bg-tab-active: #B85450;
+  --bg-content: #ecf0f1;
+  --bg-card: white;
+  --bg-weather-section: rgba(255,255,255,0.1);
+  
+  --text-white: white;
+  --text-white-muted: rgba(255,255,255,0.8);
+  --text-white-light: rgba(255,255,255,0.7);
+  --text-primary: #2C3E50;
+  --text-secondary: #333;
+  --text-muted: #555;
+  --text-light: #666;
+  
+  --accent-red: #e74c3c;
+  --accent-success: #95A985;
+  --accent-gradient-m: linear-gradient(135deg, #B85450, #D86A6A);
+  --accent-gradient-b: linear-gradient(135deg, #2563eb, #3b82f6);
+  --accent-gradient-l: linear-gradient(135deg, #dc3545, #e74c3c);
+  --accent-gradient-s: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  --accent-card-top: linear-gradient(90deg, #B85450, #95A985, #9CAAB6);
+  
+  --border-light: #e8eaed;
+  --border-divider: #f0f0f0;
+  --border-weather: rgba(255,255,255,0.2);
+  
+  --task-bg-completed: #f0f8f4;
+  --task-bg-overdue: #fef2f2;
+  --task-border-completed: #95A985;
+  --task-border-overdue: #fecaca;
+
   /* ===== TYPOGRAPHY ===== */
   --font-family-primary: 'Inter', system-ui, sans-serif;
   --font-family-display: 'Nunito Sans', system-ui, sans-serif;
@@ -49,6 +84,14 @@
   --touch-target: 44px;
   --max-content-width: 24rem;
   --border-width: 1px;
+  
+  /* ===== KITCHEN TRACKER LAYOUT ===== */
+  --container-width: 1280px;
+  --container-height: 800px;
+  --sidebar-width: 220px;
+  --progress-ring-size: 50px;
+  --avatar-size: 40px;
+  --forecast-icon-size: 60px;
 
   /* ===== SHADOWS ===== */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -80,11 +123,12 @@ body {
   font-family: var(--font-family-primary);
   font-size: var(--font-size-base);
   line-height: 1.5;
-  color: var(--white-off);
-  background-color: var(--charcoal-dark);
+  color: var(--text-primary);
+  background-color: var(--bg-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  display: flex;
 }
 
 /* ===== UTILITY CLASSES ===== */

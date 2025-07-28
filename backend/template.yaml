@@ -16,7 +16,9 @@ Globals:
     Runtime: python3.13
     Environment:
       Variables:
-        ITEMS_TABLE: !Ref ItemsTable
+        FAMILY_MEMBERS_TABLE: !Ref FamilyMembersTable
+        RECURRING_ACTIVITIES_TABLE: !Ref RecurringActivitiesTable
+        ACTIVITY_COMPLETIONS_TABLE: !Ref ActivityCompletionsTable
         HOUSEHOLD_ID: !Sub "${AWS::StackName}-household"
         ENVIRONMENT: !Ref Environment
   Api:
@@ -39,63 +41,7 @@ Resources:
           Properties:
             Path: /
             Method: GET
-        
-        # Health endpoints
-        HealthItems:
-          Type: Api
-          Properties:
-            Path: /health/items
-            Method: ANY
-        HealthComplete:
-          Type: Api
-          Properties:
-            Path: /health/complete
-            Method: POST
-        HealthToday:
-          Type: Api
-          Properties:
-            Path: /health/today
-            Method: GET
-        
-        # Person endpoints
-        PeopleList:
-          Type: Api
-          Properties:
-            Path: /people
-            Method: GET
-        PeopleCreate:
-          Type: Api
-          Properties:
-            Path: /people
-            Method: POST
-        PersonHealth:
-          Type: Api
-          Properties:
-            Path: /people/{person_id}/health
-            Method: ANY
-        
-        # Pet endpoints
-        PetList:
-          Type: Api
-          Properties:
-            Path: /pets
-            Method: GET
-        PetSetup:
-          Type: Api
-          Properties:
-            Path: /pets/setup
-            Method: POST
-        PetComplete:
-          Type: Api
-          Properties:
-            Path: /pets/complete
-            Method: POST
-        PetToday:
-          Type: Api
-          Properties:
-            Path: /pets/today
-            Method: GET
-        
+              
         # Meal endpoints  
         MealList:
           Type: Api
@@ -128,103 +74,205 @@ Resources:
             Path: /meals/{meal_id}/status
             Method: PUT
         
-        # Task endpoints
-        TaskList:
+        # NEW Family Members endpoints
+        FamilyMembersList:
           Type: Api
           Properties:
-            Path: /tasks
+            Path: /family-members
             Method: GET
-        TaskSetup:
+        FamilyMembersCreate:
           Type: Api
           Properties:
-            Path: /tasks/setup
+            Path: /family-members
             Method: POST
-        TaskComplete:
+        FamilyMemberById:
           Type: Api
           Properties:
-            Path: /tasks/complete
+            Path: /family-members/{member_id}
+            Method: ANY
+        FamilyMemberActivities:
+          Type: Api
+          Properties:
+            Path: /family-members/{member_id}/activities
+            Method: GET
+
+        # NEW Activities endpoints
+        ActivitiesList:
+          Type: Api
+          Properties:
+            Path: /activities
+            Method: GET
+        ActivitiesCreate:
+          Type: Api
+          Properties:
+            Path: /activities
             Method: POST
-        TaskToday:
+        ActivityById:
           Type: Api
           Properties:
-            Path: /tasks/today
-            Method: GET
-        TaskOverdue:
+            Path: /activities/{activity_id}
+            Method: ANY
+        ActivityComplete:
           Type: Api
           Properties:
-            Path: /tasks/overdue
-            Method: GET
-        TaskCompleted:
-          Type: Api
-          Properties:
-            Path: /tasks/completed
-            Method: GET
-        TaskById:
-          Type: Api
-          Properties:
-            Path: /tasks/{task_id}
-            Method: GET
-        TaskStatusUpdate:
-          Type: Api
-          Properties:
-            Path: /tasks/{task_id}/status
-            Method: PUT
-        
-        # Dashboard endpoints
-        DashboardToday:
-          Type: Api
-          Properties:
-            Path: /dashboard/today
-            Method: GET
-        DashboardOverdue:
-          Type: Api
-          Properties:
-            Path: /dashboard/overdue
-            Method: GET
-        DashboardTrends:
-          Type: Api
-          Properties:
-            Path: /dashboard/trends
-            Method: GET
-        
-        # Quick Complete endpoints
-        UniversalComplete:
-          Type: Api
-          Properties:
-            Path: /complete
+            Path: /activities/{activity_id}/complete
             Method: POST
-        CompletionHistory:
+        ActivityUndo:
           Type: Api
           Properties:
-            Path: /complete/history
+            Path: /activities/{activity_id}/undo
+            Method: POST
+
+        # NEW Dashboard and Summary endpoints
+        Dashboard:
+          Type: Api
+          Properties:
+            Path: /dashboard
+            Method: GET
+        Summary:
+          Type: Api
+          Properties:
+            Path: /summary
+            Method: GET
+        ActivitiesDueToday:
+          Type: Api
+          Properties:
+            Path: /activities/due-today
+            Method: GET
+        ActivitiesOverdue:
+          Type: Api
+          Properties:
+            Path: /activities/overdue
+            Method: GET
+        ActivitiesCompletedToday:
+          Type: Api
+          Properties:
+            Path: /activities/completed-today
             Method: GET
       
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref ItemsTable
+            TableName: !Ref FamilyMembersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RecurringActivitiesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ActivityCompletionsTable
 
   # DynamoDB table with environment-specific naming
-  ItemsTable:
+  # Family Members Table (replaces separate Person/Pet tables)
+  FamilyMembersTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "${AWS::StackName}-Items"
+      TableName: !Sub "${AWS::StackName}-FamilyMembers"
       AttributeDefinitions:
-        - AttributeName: user_id
+        - AttributeName: member_id
           AttributeType: S
-        - AttributeName: item_id
+        - AttributeName: household_id
           AttributeType: S
       KeySchema:
-        - AttributeName: user_id
+        - AttributeName: member_id
           KeyType: HASH
-        - AttributeName: item_id
-          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: HouseholdIndex
+          KeySchema:
+            - AttributeName: household_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
       BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       Tags:
         - Key: Environment
           Value: !Ref Environment
         - Key: Project
           Value: kitchen-tracker
-  
+
+  # Recurring Activities Table (replaces TaskItem/TrackableItem)
+  RecurringActivitiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-RecurringActivities"
+      AttributeDefinitions:
+        - AttributeName: activity_id
+          AttributeType: S
+        - AttributeName: household_id
+          AttributeType: S
+        - AttributeName: assigned_to
+          AttributeType: S
+      KeySchema:
+        - AttributeName: activity_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: HouseholdIndex
+          KeySchema:
+            - AttributeName: household_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+        - IndexName: AssignedToIndex
+          KeySchema:
+            - AttributeName: assigned_to
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: kitchen-tracker
+
+  # Activity Completions Table (replaces CompletionRecord/TaskCompletionRecord)
+  ActivityCompletionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-ActivityCompletions"
+      AttributeDefinitions:
+        - AttributeName: completion_id
+          AttributeType: S
+        - AttributeName: activity_id
+          AttributeType: S
+        - AttributeName: household_id
+          AttributeType: S
+        - AttributeName: completion_date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: completion_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: ActivityIndex
+          KeySchema:
+            - AttributeName: activity_id
+              KeyType: HASH
+            - AttributeName: completion_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+        - IndexName: HouseholdDateIndex
+          KeySchema:
+            - AttributeName: household_id
+              KeyType: HASH
+            - AttributeName: completion_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: kitchen-tracker
+
   # Email processing (only for prod)
   EmailProcessorFunction:
     Type: AWS::Serverless::Function
@@ -293,6 +341,14 @@ Outputs:
     Description: "Deployment environment"
     Value: !Ref Environment
   
-  TableName:
-    Description: "DynamoDB table name"
-    Value: !Ref ItemsTable
+  FamilyMembersTableName:
+    Description: "DynamoDB Family Members table name"
+    Value: !Ref FamilyMembersTable
+  
+  RecurringActivitiesTableName:
+    Description: "DynamoDB Recurring Activities table name"
+    Value: !Ref RecurringActivitiesTable
+  
+  ActivityCompletionsTableName:
+    Description: "DynamoDB Activity Completions table name"
+    Value: !Ref ActivityCompletionsTable

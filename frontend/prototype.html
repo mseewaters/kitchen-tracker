@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Tracker - Clean Layout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e5e5e5;
+            height: 100vh;
+            display: flex;
+        }
+        
+        .container {
+            display: flex;
+            width: 1280px;
+            height: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Left Sidebar */
+        .sidebar {
+            width: 220px;
+            background: #2c3e50;
+            color: white;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .datetime-section {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        
+        .day-date {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .time-display {
+            font-size: 48px;
+            font-weight: 700;
+            color: #e74c3c;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        
+        .period {
+            font-size: 20px;
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        .weather-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 24px 20px;
+            backdrop-filter: blur(10px);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .weather-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .weather-desc {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        
+        .temp-section {
+            margin-bottom: 20px;
+        }
+        
+        .temp-high, .temp-low {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .temp-high {
+            color: white;
+        }
+        
+        .temp-low {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .weather-details {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .forecast-section {
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 16px;
+        }
+        
+        .forecast-day {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+        
+        .forecast-name {
+            font-weight: 500;
+            min-width: 60px;
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .forecast-icon {
+            font-size: 18px;
+            margin: 0 8px;
+        }
+        
+        .forecast-temps {
+            color: rgba(255,255,255,0.8);
+            text-align: right;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: #34495e;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-button.active {
+            color: white;
+            background: #B85450;
+            border-bottom-color: #e74c3c;
+        }
+        
+        .tab-button:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background: #ecf0f1;
+        }
+        
+        .family-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 50% 50%;
+            gap: 16px;
+            height: 100%;
+        }
+        
+        .family-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e8eaed;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .family-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        
+        .family-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #B85450, #95A985, #9CAAB6);
+        }
+        
+        .family-card.pets-row {
+            grid-column: span 1;
+        }
+        
+        .pets-container {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .family-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+        
+        .family-name-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .family-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .avatar-m { background: linear-gradient(135deg, #B85450, #D86A6A); }
+        .avatar-b { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+        .avatar-l { background: linear-gradient(135deg, #dc3545, #e74c3c); }
+        .avatar-lucy { background: linear-gradient(135deg, #dc3545, #e74c3c); }
+        .avatar-s { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+        
+        .family-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2C3E50;
+        }
+        
+        .progress-ring {
+            width: 50px;
+            height: 50px;
+            position: relative;
+        }
+        
+        .progress-circle {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .progress-circle circle {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+        
+        .progress-bg {
+            stroke: #e9ecef;
+        }
+        
+        .progress-fill {
+            stroke: #95A985;
+            stroke-dasharray: 126;
+            stroke-dashoffset: 63;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: 700;
+            color: #2C3E50;
+        }
+        
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .task-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .task-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .task-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .task-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e8eaed;
+            transition: all 0.2s;
+        }
+        
+        .task-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .task-item.completed {
+            background: #f0f8f4;
+            border-color: #95A985;
+        }
+        
+        .task-item.overdue {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .task-checkbox.checked {
+            background: #95A985;
+            border-color: #95A985;
+            color: white;
+        }
+        
+        .task-checkbox:hover:not(.checked) {
+            border-color: #95A985;
+        }
+        
+        .task-info {
+            flex: 1;
+        }
+        
+        .task-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        
+        .task-time {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .task-time.overdue {
+            color: #dc3545;
+        }
+        
+        .task-time.completed {
+            color: #95A985;
+        }
+        
+        .checkmark {
+            font-size: 12px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="datetime-section">
+                <div class="day-date">Sunday, July 20</div>
+                <div class="time-display">11:30</div>
+                <div class="period">PM</div>
+            </div>
+            
+            <div class="weather-section">
+                <div class="weather-icon">🌧️</div>
+                <div class="weather-desc">Expect a day of partly cloudy with rain</div>
+                
+                <div class="temp-section">
+                    <div class="temp-high">High: 88°F</div>
+                    <div class="temp-low">Low: 70°F</div>
+                </div>
+                
+                <div class="weather-details">
+                    <div>Humidity: 70%</div>
+                    <div>Wind: 3.3 mph</div>
+                </div>
+                
+                <div class="forecast-section">
+                    <div class="forecast-day">
+                        <div class="forecast-name">Monday</div>
+                        <div class="forecast-icon">🌤️</div>
+                        <div class="forecast-temps">H: 89 L: 70</div>
+                    </div>
+                    <div class="forecast-day">
+                        <div class="forecast-name">Tuesday</div>
+                        <div class="forecast-icon">⚡</div>
+                        <div class="forecast-temps">H: 78 L: 72</div>
+                    </div>
+                    <div class="forecast-day">
+                        <div class="forecast-name">Wednesday</div>
+                        <div class="forecast-icon">☀️</div>
+                        <div class="forecast-temps">H: 85 L: 78</div>
+                    </div>
+                    <div class="forecast-day">
+                        <div class="forecast-name">Thursday</div>
+                        <div class="forecast-icon">☀️</div>
+                        <div class="forecast-temps">H: 87 L: 75</div>
+                    </div>
+                    <div class="forecast-day">
+                        <div class="forecast-name">Friday</div>
+                        <div class="forecast-icon">🌤️</div>
+                        <div class="forecast-temps">H: 95 L: 82</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-button active">Activities</button>
+                <button class="tab-button">Meals</button>
+                <button class="tab-button">Add tasks</button>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="family-grid">
+                    <!-- Top Row: Marjorie and Bob -->
+                    <div class="family-card">
+                        <div class="family-header">
+                            <div class="family-name-section">
+                                <div class="family-avatar avatar-m">M</div>
+                                <div class="family-name">Marjorie</div>
+                            </div>
+                            <div class="progress-ring">
+                                <svg class="progress-circle" viewBox="0 0 42 42">
+                                    <circle class="progress-bg" cx="21" cy="21" r="20"></circle>
+                                    <circle class="progress-fill" cx="21" cy="21" r="20" style="stroke-dashoffset: 84;"></circle>
+                                </svg>
+                                <div class="progress-text">1/3</div>
+                            </div>
+                        </div>
+                        <div class="task-list">
+                            <div class="task-item completed">
+                                <div class="task-checkbox checked">
+                                    <span class="checkmark">✓</span>
+                                </div>
+                                <div class="task-info">
+                                    <div class="task-name">Morning Buprioprion</div>
+                                    <div class="task-time completed">8:30 AM</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Lunch Vitamins</div>
+                                    <div class="task-time">Due 8:00 PM</div>
+                                </div>
+                            </div>
+                            <div class="task-item overdue">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Clean fish tank</div>
+                                    <div class="task-time overdue">Overdue</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Evening Medication</div>
+                                    <div class="task-time">Due 9:00 PM</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Water Plants</div>
+                                    <div class="task-time">Due 10:00 AM</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Physical Therapy</div>
+                                    <div class="task-time">Due 2:00 PM</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="family-card">
+                        <div class="family-header">
+                            <div class="family-name-section">
+                                <div class="family-avatar avatar-b">B</div>
+                                <div class="family-name">Bob</div>
+                            </div>
+                            <div class="progress-ring">
+                                <svg class="progress-circle" viewBox="0 0 42 42">
+                                    <circle class="progress-bg" cx="21" cy="21" r="20"></circle>
+                                    <circle class="progress-fill" cx="21" cy="21" r="20" style="stroke-dashoffset: 42;"></circle>
+                                </svg>
+                                <div class="progress-text">2/3</div>
+                            </div>
+                        </div>
+                        <div class="task-list">
+                            <div class="task-item completed">
+                                <div class="task-checkbox checked">
+                                    <span class="checkmark">✓</span>
+                                </div>
+                                <div class="task-info">
+                                    <div class="task-name">Morning Pills</div>
+                                    <div class="task-time completed">8:30 AM</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Evening Pills</div>
+                                    <div class="task-time">Due 8:00 PM</div>
+                                </div>
+                            </div>
+                            <div class="task-item completed">
+                                <div class="task-checkbox checked">
+                                    <span class="checkmark">✓</span>
+                                </div>
+                                <div class="task-info">
+                                    <div class="task-name">Vacuum</div>
+                                    <div class="task-time completed">3:00 PM</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Check Blood Sugar</div>
+                                    <div class="task-time">Due 3:00 PM</div>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-checkbox"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Evening Walk</div>
+                                    <div class="task-time">Due 6:30 PM</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom Row: Pets in thirds -->
+                    <div class="pets-container">
+                        <div class="family-card pets-row">
+                            <div class="family-header">
+                                <div class="family-name-section">
+                                    <div class="family-avatar avatar-l">L</div>
+                                    <div class="family-name">Layla</div>
+                                </div>
+                                <div class="progress-ring">
+                                    <svg class="progress-circle" viewBox="0 0 42 42">
+                                        <circle class="progress-bg" cx="21" cy="21" r="20"></circle>
+                                        <circle class="progress-fill" cx="21" cy="21" r="20" style="stroke-dashoffset: 84;"></circle>
+                                    </svg>
+                                    <div class="progress-text">1/3</div>
+                                </div>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-item completed">
+                                    <div class="task-checkbox checked">
+                                        <span class="checkmark">✓</span>
+                                    </div>
+                                    <div class="task-info">
+                                        <div class="task-name">Ate dinner</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Before bed jerky</div>
+                                    </div>
+                                </div>
+                                <div class="task-item overdue">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Monthly flea treatment</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Morning walk</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Evening walk</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="family-card pets-row">
+                            <div class="family-header">
+                                <div class="family-name-section">
+                                    <div class="family-avatar avatar-lucy">L</div>
+                                    <div class="family-name">Lucy</div>
+                                </div>
+                                <div class="progress-ring">
+                                    <svg class="progress-circle" viewBox="0 0 42 42">
+                                        <circle class="progress-bg" cx="21" cy="21" r="20"></circle>
+                                        <circle class="progress-fill" cx="21" cy="21" r="20" style="stroke-dashoffset: 84;"></circle>
+                                    </svg>
+                                    <div class="progress-text">1/3</div>
+                                </div>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-item completed">
+                                    <div class="task-checkbox checked">
+                                        <span class="checkmark">✓</span>
+                                    </div>
+                                    <div class="task-info">
+                                        <div class="task-name">Ate dinner</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Before bed jerky</div>
+                                    </div>
+                                </div>
+                                <div class="task-item overdue">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Monthly flea treatment</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Special medication</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="family-card pets-row">
+                            <div class="family-header">
+                                <div class="family-name-section">
+                                    <div class="family-avatar avatar-s">S</div>
+                                    <div class="family-name">Sadie</div>
+                                </div>
+                                <div class="progress-ring">
+                                    <svg class="progress-circle" viewBox="0 0 42 42">
+                                        <circle class="progress-bg" cx="21" cy="21" r="20"></circle>
+                                        <circle class="progress-fill" cx="21" cy="21" r="20" style="stroke-dashoffset: 126;"></circle>
+                                    </svg>
+                                    <div class="progress-text">0/3</div>
+                                </div>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Before bed slurp</div>
+                                    </div>
+                                </div>
+                                <div class="task-item overdue">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Monthly flea treatment</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Litter box cleaned</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Morning treats</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Evening treats</div>
+                                    </div>
+                                </div>
+                                <div class="task-item">
+                                    <div class="task-checkbox"></div>
+                                    <div class="task-info">
+                                        <div class="task-name">Fresh water</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Checkbox functionality
+        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('click', function() {
+                const item = this.closest('.task-item');
+                const timeEl = item.querySelector('.task-time');
+                
+                if (this.classList.contains('checked')) {
+                    // Unchecking - undo completion
+                    this.classList.remove('checked');
+                    this.innerHTML = '';
+                    item.classList.remove('completed');
+                    
+                    if (timeEl) {
+                        // Restore original time if it was overdue, otherwise set to pending
+                        if (item.classList.contains('overdue')) {
+                            timeEl.textContent = 'Overdue';
+                            timeEl.classList.add('overdue');
+                        } else {
+                            timeEl.textContent = 'Pending';
+                            timeEl.classList.remove('overdue');
+                        }
+                        timeEl.classList.remove('completed');
+                    }
+                } else {
+                    // Checking - mark as completed
+                    this.classList.add('checked');
+                    this.innerHTML = '<span class="checkmark">✓</span>';
+                    item.classList.add('completed');
+                    item.classList.remove('overdue');
+                    
+                    if (timeEl) {
+                        timeEl.textContent = 'Just completed';
+                        timeEl.classList.add('completed');
+                        timeEl.classList.remove('overdue');
+                    }
+                }
+                
+                // Update completion badge
+                updateCompletionBadge(item.closest('.family-card'));
+            });
+        });
+        
+        function updateCompletionBadge(card) {
+            const completed = card.querySelectorAll('.task-item.completed').length;
+            const total = card.querySelectorAll('.task-item').length;
+            const progressText = card.querySelector('.progress-text');
+            const progressFill = card.querySelector('.progress-fill');
+            
+            // Update text
+            progressText.textContent = `${completed}/${total}`;
+            
+            // Update progress ring
+            const percentage = completed / total;
+            const circumference = 126;
+            const offset = circumference - (percentage * circumference);
+            progressFill.style.strokeDashoffset = offset;
+        }
+    </script>
+</body>
+</html>

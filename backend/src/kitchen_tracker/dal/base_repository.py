@@ -4,9 +4,9 @@ from typing import Dict, List, Optional, Any
 from boto3.dynamodb.conditions import Key
 
 class BaseRepository:
-    def __init__(self, table_name: str = None):
+    def __init__(self, table_name: str):
         self.dynamodb = boto3.resource('dynamodb')
-        self.table_name = table_name or os.environ.get('ITEMS_TABLE')
+        self.table_name = table_name
         self.table = self.dynamodb.Table(self.table_name)
     
     def put_item(self, item: Dict[str, Any]) -> bool:
