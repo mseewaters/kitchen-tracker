@@ -31,7 +31,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'headers': headers,
             'body': ''
         }
-    
+      
     try:
         # Extract path and method
         path = event.get('path', '')
