@@ -1,23 +1,26 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-interface Task {
-  id: string
+interface Activity {
+  activity_id: string
   name: string
-  time?: string
-  completed: boolean
-  overdue: boolean
-  personId: string
-  dueDate?: string
+  assigned_to: string
+  frequency: string
+  status: string
+  is_overdue: boolean
+  is_completed: boolean
   category?: string
 }
 
-interface Person {
-  id: string
+interface FamilyMember {
+  member_id: string
   name: string
+  member_type: 'person' | 'pet'
+  pet_type?: string
+  is_active: boolean
   avatar: string
   avatarClass: string
-  tasks: Task[]
+  activities: Activity[]
 }
 
 interface WeatherData {
@@ -69,14 +72,15 @@ export const useKitchenStore = defineStore('kitchen', () => {
     error: ''
   })
 
-  // Family and pets data - will be populated from API
-  const people = ref<Person[]>([])
-  const pets = ref<Person[]>([])
+  // Family members data - will be populated from API
+  const familyMembers = ref<FamilyMember[]>([])
   const loading = ref(false)
   const error = ref('')
 
   // Computed values
-  const allFamily = computed(() => [...people.value, ...pets.value])
+  const allFamily = computed(() => familyMembers.value)
+  const people = computed(() => familyMembers.value.filter(m => m.member_type === 'person'))
+  const pets = computed(() => familyMembers.value.filter(m => m.member_type === 'pet'))
 
   // Actions
   function updateDateTime() {
@@ -98,7 +102,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
 
-  // Fetch family members from API (combines people and pets)
+  // Fetch family members from API (unified people and pets)
   async function fetchFamilyMembers() {
     try {
       loading.value = true
@@ -107,68 +111,68 @@ export const useKitchenStore = defineStore('kitchen', () => {
       
       const familyData = await response.json()
       
-      // Separate people and pets
-      people.value = familyData
-        .filter((member: any) => member.member_type === 'person')
-        .map((person: any) => ({
-          id: person.member_id,
-          name: person.name,
-          avatar: person.name.charAt(0).toUpperCase(),
-          avatarClass: `avatar-${person.name.toLowerCase()}`,
-          tasks: []
-        }))
-      
-      pets.value = familyData
-        .filter((member: any) => member.member_type === 'pet')
-        .map((pet: any) => ({
-          id: pet.member_id,
-          name: pet.name,
-          avatar: pet.name.charAt(0).toUpperCase(),
-          avatarClass: `avatar-${pet.name.toLowerCase()}`,
-          tasks: []
-        }))
+      familyMembers.value = familyData.map((member: any) => ({
+        member_id: member.member_id,
+        name: member.name,
+        member_type: member.member_type,
+        pet_type: member.pet_type,
+        is_active: member.is_active,
+        avatar: member.name.charAt(0).toUpperCase(),
+        avatarClass: `avatar-${member.name.toLowerCase()}`,
+        activities: []
+      }))
         
     } catch (err) {
       console.warn('API not available, using mock data for family members')
       // Mock data for development
-      people.value = [
+      familyMembers.value = [
         {
-          id: 'marjorie',
+          member_id: 'marjorie',
           name: 'Marjorie',
+          member_type: 'person',
+          is_active: true,
           avatar: 'M',
           avatarClass: 'avatar-marjorie',
-          tasks: []
+          activities: []
         },
         {
-          id: 'bob',
+          member_id: 'bob',
           name: 'Bob',
+          member_type: 'person',
+          is_active: true,
           avatar: 'B',
           avatarClass: 'avatar-bob',
-          tasks: []
-        }
-      ]
-      
-      pets.value = [
+          activities: []
+        },
         {
-          id: 'layla',
+          member_id: 'layla',
           name: 'Layla',
+          member_type: 'pet',
+          pet_type: 'dog',
+          is_active: true,
           avatar: 'L',
           avatarClass: 'avatar-layla',
-          tasks: []
+          activities: []
         },
         {
-          id: 'lucy',
+          member_id: 'lucy',
           name: 'Lucy',
+          member_type: 'pet',
+          pet_type: 'dog',
+          is_active: true,
           avatar: 'L',
           avatarClass: 'avatar-lucy',
-          tasks: []
+          activities: []
         },
         {
-          id: 'sadie',
+          member_id: 'sadie',
           name: 'Sadie',
+          member_type: 'pet',
+          pet_type: 'cat',
+          is_active: true,
           avatar: 'S',
           avatarClass: 'avatar-sadie',
-          tasks: []
+          activities: []
         }
       ]
     } finally {
@@ -176,7 +180,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
     }
   }
 
-  // Fetch activities from API (replaces fetchTasks)
+  // Fetch activities from API
   async function fetchActivities() {
     try {
       loading.value = true
@@ -185,59 +189,57 @@ export const useKitchenStore = defineStore('kitchen', () => {
       
       const activitiesData = await response.json()
       
-      // Associate activities with family members
-      const allMembers = [...people.value, ...pets.value]
-      
-      // Clear existing tasks
-      allMembers.forEach(member => member.tasks = [])
+      // Clear existing activities
+      familyMembers.value.forEach(member => member.activities = [])
       
       for (const activity of activitiesData) {
-        const member = allMembers.find(m => m.id === activity.assigned_to)
+        const member = familyMembers.value.find(m => m.member_id === activity.assigned_to)
         
         if (member) {
-          const taskObj = {
-            id: activity.activity_id,
+          const activityObj = {
+            activity_id: activity.activity_id,
             name: activity.name,
-            time: activity.status === 'completed' ? 'Just completed' : `Due ${activity.frequency}`,
-            completed: activity.completed,
-            overdue: activity.is_overdue,
-            personId: activity.assigned_to,
+            assigned_to: activity.assigned_to,
+            frequency: activity.frequency,
+            status: activity.status,
+            is_overdue: activity.is_overdue,
+            is_completed: activity.is_completed,
             category: activity.category || 'general'
           }
           
-          member.tasks.push(taskObj)
+          member.activities.push(activityObj)
         }
       }
     } catch (err) {
       console.warn('API not available, using mock data for activities')
-      // Add some mock tasks to the family members
-      const mockTasks = {
+      // Add some mock activities to the family members
+      const mockActivities = {
         marjorie: [
-          { id: 'm1', name: 'Morning Buprioprion', time: '8:30 AM', completed: true, overdue: false, personId: 'marjorie' },
-          { id: 'm2', name: 'Lunch Vitamins', time: 'Due 8:00 PM', completed: false, overdue: false, personId: 'marjorie' },
-          { id: 'm3', name: 'Clean fish tank', time: 'Overdue', completed: false, overdue: true, personId: 'marjorie' }
+          { activity_id: 'm1', name: 'Morning Buprioprion', assigned_to: 'marjorie', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
+          { activity_id: 'm2', name: 'Lunch Vitamins', assigned_to: 'marjorie', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false },
+          { activity_id: 'm3', name: 'Clean fish tank', assigned_to: 'marjorie', frequency: 'weekly', status: 'overdue', is_completed: false, is_overdue: true }
         ],
         bob: [
-          { id: 'b1', name: 'Morning Pills', time: '8:30 AM', completed: true, overdue: false, personId: 'bob' },
-          { id: 'b2', name: 'Evening Pills', time: 'Due 8:00 PM', completed: false, overdue: false, personId: 'bob' }
+          { activity_id: 'b1', name: 'Morning Pills', assigned_to: 'bob', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
+          { activity_id: 'b2', name: 'Evening Pills', assigned_to: 'bob', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false }
         ],
         layla: [
-          { id: 'l1', name: 'Ate dinner', completed: true, overdue: false, personId: 'layla' },
-          { id: 'l2', name: 'Before bed jerky', completed: false, overdue: false, personId: 'layla' }
+          { activity_id: 'l1', name: 'Ate dinner', assigned_to: 'layla', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
+          { activity_id: 'l2', name: 'Before bed jerky', assigned_to: 'layla', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false }
         ],
         lucy: [
-          { id: 'lu1', name: 'Ate dinner', completed: true, overdue: false, personId: 'lucy' },
-          { id: 'lu2', name: 'Before bed jerky', completed: false, overdue: false, personId: 'lucy' }
+          { activity_id: 'lu1', name: 'Ate dinner', assigned_to: 'lucy', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
+          { activity_id: 'lu2', name: 'Before bed jerky', assigned_to: 'lucy', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false }
         ],
         sadie: [
-          { id: 's1', name: 'Before bed slurp', completed: false, overdue: false, personId: 'sadie' },
-          { id: 's2', name: 'Litter box cleaned', completed: false, overdue: false, personId: 'sadie' }
+          { activity_id: 's1', name: 'Before bed slurp', assigned_to: 'sadie', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false },
+          { activity_id: 's2', name: 'Litter box cleaned', assigned_to: 'sadie', frequency: 'weekly', status: 'due', is_completed: false, is_overdue: false }
         ]
       }
       
-      // Assign mock tasks
-      [...people.value, ...pets.value].forEach(member => {
-        member.tasks = mockTasks[member.id as keyof typeof mockTasks] || []
+      // Assign mock activities
+      familyMembers.value.forEach(member => {
+        member.activities = mockActivities[member.member_id as keyof typeof mockActivities] || []
       })
       
     } finally {
@@ -245,29 +247,30 @@ export const useKitchenStore = defineStore('kitchen', () => {
     }
   }
 
-  // Toggle task completion
-  async function toggleTask(taskId: string) {
+  // Toggle activity completion
+  async function toggleActivity(activityId: string) {
     try {
-      // Find the task locally
-      let task: Task | undefined
-      for (const person of allFamily.value) {
-        task = person.tasks.find(t => t.id === taskId)
-        if (task) break
+      // Find the activity locally
+      let activity: Activity | undefined
+      for (const member of familyMembers.value) {
+        activity = member.activities.find(a => a.activity_id === activityId)
+        if (activity) break
       }
       
-      if (!task) return
+      if (!activity) return
       
       // Update locally first for immediate UI feedback
-      const wasCompleted = task.completed
-      task.completed = !task.completed
-      if (task.completed) {
-        task.overdue = false
+      const wasCompleted = activity.is_completed
+      activity.is_completed = !activity.is_completed
+      activity.status = activity.is_completed ? 'completed' : 'due'
+      if (activity.is_completed) {
+        activity.is_overdue = false
       }
       
-      // Update on server - use new activity completion endpoint
-      const endpoint = task.completed 
-        ? `${apiBaseUrl}/activities/${taskId}/complete`
-        : `${apiBaseUrl}/activities/${taskId}/undo`
+      // Update on server
+      const endpoint = activity.is_completed 
+        ? `${apiBaseUrl}/activities/${activityId}/complete`
+        : `${apiBaseUrl}/activities/${activityId}/undo`
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -279,22 +282,23 @@ export const useKitchenStore = defineStore('kitchen', () => {
       
       if (!response.ok) {
         // Revert local change if server update failed
-        task.completed = wasCompleted
-        throw new Error('Failed to update task')
+        activity.is_completed = wasCompleted
+        activity.status = wasCompleted ? 'completed' : 'due'
+        throw new Error('Failed to update activity')
       }
       
     } catch (err) {
-      console.error('Error toggling task:', err)
-      error.value = 'Failed to update task'
+      console.error('Error toggling activity:', err)
+      error.value = 'Failed to update activity'
     }
   }
 
-  function getCompletionStats(personId: string) {
-    const person = allFamily.value.find(p => p.id === personId)
-    if (!person) return { completed: 0, total: 0, percentage: 0 }
+  function getCompletionStats(memberId: string) {
+    const member = familyMembers.value.find(m => m.member_id === memberId)
+    if (!member) return { completed: 0, total: 0, percentage: 0 }
     
-    const completed = person.tasks.filter(t => t.completed).length
-    const total = person.tasks.length
+    const completed = member.activities.filter(a => a.is_completed).length
+    const total = member.activities.length
     const percentage = total > 0 ? completed / total : 0
     
     return { completed, total, percentage }
@@ -370,18 +374,19 @@ export const useKitchenStore = defineStore('kitchen', () => {
     currentYear,
     activeTab,
     weather,
-    people,
-    pets,
+    familyMembers,
     loading,
     error,
     
     // Computed
     allFamily,
+    people,
+    pets,
     
     // Actions
     updateDateTime,
     setActiveTab,
-    toggleTask,
+    toggleActivity,
     getCompletionStats,
     fetchWeather,
     fetchFamilyMembers,

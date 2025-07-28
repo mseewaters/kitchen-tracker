@@ -2,10 +2,10 @@
   <div class="family-card" :class="{ 'pets-row': isPet }">
     <div class="family-header">
       <div class="family-name-section">
-        <div class="family-avatar" :class="person.avatarClass">
-          {{ person.avatar }}
+        <div class="family-avatar" :class="member.avatarClass">
+          {{ member.avatar }}
         </div>
-        <div class="family-name">{{ person.name }}</div>
+        <div class="family-name">{{ member.name }}</div>
       </div>
       <div class="progress-ring">
         <svg class="progress-circle" viewBox="0 0 42 42">
@@ -23,10 +23,10 @@
     </div>
     <div class="task-list">
       <TaskItem
-        v-for="task in person.tasks"
-        :key="task.id"
-        :task="task"
-        @toggle="$emit('toggleTask', $event)"
+        v-for="activity in member.activities"
+        :key="activity.activity_id"
+        :activity="activity"
+        @toggle="$emit('toggleActivity', $event)"
       />
     </div>
   </div>
@@ -37,34 +37,35 @@ import { computed } from 'vue'
 import TaskItem from './TaskItem.vue'
 import { useKitchenStore } from '../stores/kitchen'
 
-interface Person {
-  id: string
+interface FamilyMember {
+  member_id: string
   name: string
+  member_type: 'person' | 'pet'
   avatar: string
   avatarClass: string
-  tasks: Array<{
-    id: string
+  activities: Array<{
+    activity_id: string
     name: string
-    time?: string
-    completed: boolean
-    overdue: boolean
-    personId: string
+    status: string
+    is_completed: boolean
+    is_overdue: boolean
+    assigned_to: string
   }>
 }
 
 const props = defineProps<{
-  person: Person
+  member: FamilyMember
   isPet?: boolean
 }>()
 
 defineEmits<{
-  toggleTask: [taskId: string]
+  toggleActivity: [activityId: string]
 }>()
 
 const store = useKitchenStore()
 
 const completionStats = computed(() => {
-  return store.getCompletionStats(props.person.id)
+  return store.getCompletionStats(props.member.member_id)
 })
 
 const progressOffset = computed(() => {

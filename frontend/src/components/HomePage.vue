@@ -14,19 +14,19 @@
           <!-- Top Row: People -->
           <FamilyCard
             v-for="person in people"
-            :key="person.id"
-            :person="person"
-            @toggle-task="handleToggleTask"
+            :key="person.member_id"
+            :member="person"
+            @toggle-activity="handleToggleActivity"
           />
           
           <!-- Bottom Row: Pets in thirds -->
           <div class="pets-container">
             <FamilyCard
               v-for="pet in pets"
-              :key="pet.id"
-              :person="pet"
+              :key="pet.member_id"
+              :member="pet"
               :is-pet="true"
-              @toggle-task="handleToggleTask"
+              @toggle-activity="handleToggleActivity"
             />
           </div>
         </div>
@@ -55,12 +55,12 @@ import { useKitchenStore } from '../stores/kitchen'
 
 const store = useKitchenStore()
 const { activeTab, people, pets } = storeToRefs(store)
-const { updateDateTime, initializeData, toggleTask, fetchWeather } = store
+const { updateDateTime, initializeData, toggleActivity, fetchWeather } = store
 
 let timeInterval: number
 
-async function handleToggleTask(taskId: string) {
-  await toggleTask(taskId)
+async function handleToggleActivity(activityId: string) {
+  await toggleActivity(activityId)
 }
 
 onMounted(async () => {

@@ -2,50 +2,60 @@
   <div 
     class="task-item"
     :class="{ 
-      completed: task.completed, 
-      overdue: task.overdue && !task.completed 
+      completed: activity.is_completed, 
+      overdue: activity.is_overdue && !activity.is_completed 
     }"
   >
     <div 
       class="task-checkbox"
-      :class="{ checked: task.completed }"
-      @click="$emit('toggle', task.id)"
+      :class="{ checked: activity.is_completed }"
+      @click="$emit('toggle', activity.activity_id)"
     >
-      <span v-if="task.completed" class="checkmark">✓</span>
+      <span v-if="activity.is_completed" class="checkmark">✓</span>
     </div>
     <div class="task-info">
-      <div class="task-name">{{ task.name }}</div>
+      <div class="task-name">{{ activity.name }}</div>
       <div 
-        v-if="task.time"
         class="task-time"
         :class="{ 
-          overdue: task.overdue && !task.completed,
-          completed: task.completed 
+          overdue: activity.is_overdue && !activity.is_completed,
+          completed: activity.is_completed 
         }"
       >
-        {{ task.completed ? 'Just completed' : task.time }}
+        {{ getTimeDisplay() }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-interface Task {
-  id: string
+interface Activity {
+  activity_id: string
   name: string
-  time?: string
-  completed: boolean
-  overdue: boolean
-  personId: string
+  status: string
+  is_completed: boolean
+  is_overdue: boolean
+  assigned_to: string
+  frequency: string
 }
 
-defineProps<{
-  task: Task
+const props = defineProps<{
+  activity: Activity
 }>()
 
 defineEmits<{
-  toggle: [taskId: string]
+  toggle: [activityId: string]
 }>()
+
+function getTimeDisplay() {
+  if (props.activity.is_completed) {
+    return 'Just completed'
+  }
+  if (props.activity.is_overdue) {
+    return 'Overdue'
+  }
+  return `Due ${props.activity.frequency}`
+}
 </script>
 
 <style scoped>
