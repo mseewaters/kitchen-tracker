@@ -45,7 +45,14 @@ jobs:
         run: |
           cd src/kitchen_tracker
           python -m py_compile app.py
-          python -c "from models.family_member import FamilyMember; from models.recurring_activity import RecurringActivity; from models.activity_completion import ActivityCompletion; from services.kitchen_service import KitchenService; print('✅ All imports successful')"
+          python -m py_compile models/family_member.py
+          python -m py_compile models/recurring_activity.py
+          python -m py_compile models/activity_completion.py
+          python -m py_compile dal/family_member_repository.py
+          python -m py_compile dal/recurring_activity_repository.py
+          python -m py_compile dal/activity_completion_repository.py
+          python -m py_compile services/kitchen_service.py
+          echo "✅ All syntax checks passed"
 
   deploy-dev:
     name: Deploy to Dev

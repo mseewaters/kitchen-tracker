@@ -9,6 +9,7 @@ from models.recurring_activity import RecurringActivity
 from models.activity_completion import ActivityCompletion
 from services.kitchen_service import KitchenService
 
+# Line to force deployment
 # Initialize service
 kitchen_service = KitchenService()
 
