@@ -45,7 +45,7 @@ jobs:
         run: |
           cd src/kitchen_tracker
           python -m py_compile app.py
-          python -c "from models.task import TaskItem; from dal.task_repository import TaskRepository; print('✅ All imports successful')"
+          python -c "from models.family_member import FamilyMember; from models.recurring_activity import RecurringActivity; from models.activity_completion import ActivityCompletion; from services.kitchen_service import KitchenService; print('✅ All imports successful')"
 
   deploy-dev:
     name: Deploy to Dev
