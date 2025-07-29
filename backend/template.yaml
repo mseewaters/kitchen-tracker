@@ -85,6 +85,11 @@ Resources:
           Properties:
             Path: /family-members
             Method: POST
+        FamilyMembersOptions:
+          Type: Api
+          Properties:
+            Path: /family-members
+            Method: OPTIONS
         FamilyMemberById:
           Type: Api
           Properties:
@@ -107,6 +112,11 @@ Resources:
           Properties:
             Path: /activities
             Method: POST
+        ActivitiesOptions:
+          Type: Api
+          Properties:
+            Path: /activities
+            Method: OPTIONS
         ActivityById:
           Type: Api
           Properties:

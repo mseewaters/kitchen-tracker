@@ -123,58 +123,8 @@ export const useKitchenStore = defineStore('kitchen', () => {
       }))
         
     } catch {
-      console.warn('API not available, using mock data for family members')
-      // Mock data for development
-      familyMembers.value = [
-        {
-          member_id: 'marjorie',
-          name: 'Marjorie',
-          member_type: 'person',
-          is_active: true,
-          avatar: 'M',
-          avatarClass: 'avatar-marjorie',
-          activities: []
-        },
-        {
-          member_id: 'bob',
-          name: 'Bob',
-          member_type: 'person',
-          is_active: true,
-          avatar: 'B',
-          avatarClass: 'avatar-bob',
-          activities: []
-        },
-        {
-          member_id: 'layla',
-          name: 'Layla',
-          member_type: 'pet',
-          pet_type: 'dog',
-          is_active: true,
-          avatar: 'L',
-          avatarClass: 'avatar-layla',
-          activities: []
-        },
-        {
-          member_id: 'lucy',
-          name: 'Lucy',
-          member_type: 'pet',
-          pet_type: 'dog',
-          is_active: true,
-          avatar: 'L',
-          avatarClass: 'avatar-lucy',
-          activities: []
-        },
-        {
-          member_id: 'sadie',
-          name: 'Sadie',
-          member_type: 'pet',
-          pet_type: 'cat',
-          is_active: true,
-          avatar: 'S',
-          avatarClass: 'avatar-sadie',
-          activities: []
-        }
-      ]
+      console.warn('API not available - family members will be empty until API is accessible')
+      familyMembers.value = []
     } finally {
       loading.value = false
     }
@@ -211,35 +161,10 @@ export const useKitchenStore = defineStore('kitchen', () => {
         }
       }
     } catch {
-      console.warn('API not available, using mock data for activities')
-      // Add some mock activities to the family members
-      const mockActivities = {
-        marjorie: [
-          { activity_id: 'm1', name: 'Morning Buprioprion', assigned_to: 'marjorie', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
-          { activity_id: 'm2', name: 'Lunch Vitamins', assigned_to: 'marjorie', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false },
-          { activity_id: 'm3', name: 'Clean fish tank', assigned_to: 'marjorie', frequency: 'weekly', status: 'overdue', is_completed: false, is_overdue: true }
-        ],
-        bob: [
-          { activity_id: 'b1', name: 'Morning Pills', assigned_to: 'bob', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
-          { activity_id: 'b2', name: 'Evening Pills', assigned_to: 'bob', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false }
-        ],
-        layla: [
-          { activity_id: 'l1', name: 'Ate dinner', assigned_to: 'layla', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
-          { activity_id: 'l2', name: 'Before bed jerky', assigned_to: 'layla', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false }
-        ],
-        lucy: [
-          { activity_id: 'lu1', name: 'Ate dinner', assigned_to: 'lucy', frequency: 'daily', status: 'completed', is_completed: true, is_overdue: false },
-          { activity_id: 'lu2', name: 'Before bed jerky', assigned_to: 'lucy', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false }
-        ],
-        sadie: [
-          { activity_id: 's1', name: 'Before bed slurp', assigned_to: 'sadie', frequency: 'daily', status: 'due', is_completed: false, is_overdue: false },
-          { activity_id: 's2', name: 'Litter box cleaned', assigned_to: 'sadie', frequency: 'weekly', status: 'due', is_completed: false, is_overdue: false }
-        ]
-      }
-      
-      // Assign mock activities
+      console.warn('API not available - activities will be empty until API is accessible')
+      // Clear all activities when API is not available
       familyMembers.value.forEach(member => {
-        member.activities = mockActivities[member.member_id as keyof typeof mockActivities] || []
+        member.activities = []
       })
       
     } finally {

@@ -8,5 +8,14 @@ export default defineConfig({
     alias: {
       '@': new URL('./src', import.meta.url).pathname
     }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://pww22u41ud.execute-api.us-east-1.amazonaws.com/Prod',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 })

@@ -28,37 +28,41 @@
         </button>
       </div>
 
-      <div class="data-table">
-        <div class="table-header">
-          <div class="col-name">Name</div>
-          <div class="col-type">Type</div>
-          <div class="col-pet-type">Pet Type</div>
-          <div class="col-status">Status</div>
-          <div class="col-actions">Actions</div>
-        </div>
-        
-        <div 
-          v-for="member in familyMembers" 
-          :key="member.member_id"
-          class="table-row"
-        >
-          <div class="col-name">{{ member.name }}</div>
-          <div class="col-type">{{ member.member_type }}</div>
-          <div class="col-pet-type">{{ member.pet_type || '-' }}</div>
-          <div class="col-status">
-            <span :class="member.is_active ? 'status-active' : 'status-inactive'">
-              {{ member.is_active ? 'Active' : 'Inactive' }}
-            </span>
-          </div>
-          <div class="col-actions">
-            <button class="btn-edit" @click="openFamilyMemberForm(member)">Edit</button>
-            <button class="btn-delete" @click="deleteFamilyMember(member.member_id)">Delete</button>
-          </div>
-        </div>
-
-        <div v-if="familyMembers.length === 0" class="empty-state">
-          No family members found. Add your first family member above.
-        </div>
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Pet Type</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="member in familyMembers" :key="member.member_id">
+              <td>{{ member.name }}</td>
+              <td class="capitalize">{{ member.member_type }}</td>
+              <td>{{ member.pet_type || '-' }}</td>
+              <td>
+                <span :class="member.is_active ? 'status-active' : 'status-inactive'">
+                  {{ member.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-edit" @click="openFamilyMemberForm(member)">Edit</button>
+                  <button class="btn-delete" @click="deleteFamilyMember(member.member_id)">Delete</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="familyMembers.length === 0">
+              <td colspan="5" class="empty-state">
+                No family members found. Add your first family member above.
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -70,39 +74,43 @@
         </button>
       </div>
 
-      <div class="data-table">
-        <div class="table-header">
-          <div class="col-name">Task Name</div>
-          <div class="col-assigned">Assigned To</div>
-          <div class="col-frequency">Frequency</div>
-          <div class="col-category">Category</div>
-          <div class="col-status">Status</div>
-          <div class="col-actions">Actions</div>
-        </div>
-        
-        <div 
-          v-for="activity in activities" 
-          :key="activity.activity_id"
-          class="table-row"
-        >
-          <div class="col-name">{{ activity.name }}</div>
-          <div class="col-assigned">{{ getAssignedMemberName(activity.assigned_to) }}</div>
-          <div class="col-frequency">{{ activity.frequency }}</div>
-          <div class="col-category">{{ activity.category || 'General' }}</div>
-          <div class="col-status">
-            <span :class="activity.is_active ? 'status-active' : 'status-inactive'">
-              {{ activity.is_active ? 'Active' : 'Inactive' }}
-            </span>
-          </div>
-          <div class="col-actions">
-            <button class="btn-edit" @click="openActivityForm(activity)">Edit</button>
-            <button class="btn-delete" @click="deleteActivity(activity.activity_id)">Delete</button>
-          </div>
-        </div>
-
-        <div v-if="activities.length === 0" class="empty-state">
-          No recurring tasks found. Add your first task above.
-        </div>
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Task Name</th>
+              <th>Assigned To</th>
+              <th>Frequency</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="activity in activities" :key="activity.activity_id">
+              <td>{{ activity.name }}</td>
+              <td>{{ getAssignedMemberName(activity.assigned_to) }}</td>
+              <td class="capitalize">{{ activity.frequency }}</td>
+              <td class="capitalize">{{ activity.category || 'General' }}</td>
+              <td>
+                <span :class="activity.is_active ? 'status-active' : 'status-inactive'">
+                  {{ activity.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-edit" @click="openActivityForm(activity)">Edit</button>
+                  <button class="btn-delete" @click="deleteActivity(activity.activity_id)">Delete</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="activities.length === 0">
+              <td colspan="6" class="empty-state">
+                No recurring tasks found. Add your first task above.
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -170,8 +178,12 @@
             <button type="button" class="btn-secondary" @click="closeFamilyMemberForm">
               Cancel
             </button>
-            <button type="submit" class="btn-primary" :disabled="!familyMemberForm.name || !familyMemberForm.member_type">
-              {{ editingFamilyMember ? 'Update' : 'Create' }}
+            <button 
+              type="submit" 
+              class="btn-primary"
+              :disabled="!familyMemberForm.name || !familyMemberForm.member_type"
+            >
+              {{ editingFamilyMember ? 'Update' : 'Save' }}
             </button>
           </div>
         </form>
@@ -260,8 +272,12 @@
             <button type="button" class="btn-secondary" @click="closeActivityForm">
               Cancel
             </button>
-            <button type="submit" class="btn-primary" :disabled="!isActivityFormValid">
-              {{ editingActivity ? 'Update' : 'Create' }}
+            <button 
+              type="submit" 
+              class="btn-primary"
+              :disabled="!isActivityFormValid"
+            >
+              {{ editingActivity ? 'Update' : 'Save' }}
             </button>
           </div>
         </form>
@@ -517,6 +533,7 @@ onMounted(() => {
 
 .admin-header {
   margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .admin-header h2 {
@@ -560,44 +577,51 @@ onMounted(() => {
 
 .section-actions {
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.data-table {
+.data-table-container {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  overflow: auto;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   background: var(--bg-card);
-  overflow: hidden;
 }
 
-.table-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
-  gap: 16px;
-  padding: 16px;
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.data-table th {
   background: var(--bg-tab-nav);
   color: var(--text-white);
   font-weight: 600;
+  padding: 16px;
+  text-align: left;
   border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-.table-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
-  gap: 16px;
+.data-table td {
   padding: 16px;
   border-bottom: 1px solid var(--border-light);
-  align-items: center;
+  color: var(--text-primary);
 }
 
-.table-row:hover {
+.data-table tbody tr:hover {
   background: var(--bg-hover);
 }
 
-.table-row:last-child {
+.data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.capitalize {
+  text-transform: capitalize;
 }
 
 .status-active {
@@ -610,18 +634,21 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.col-actions {
+.action-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-edit, .btn-delete {
-  padding: 4px 8px;
+  padding: 6px 12px;
   border: 1px solid;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-edit {
@@ -647,18 +674,21 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: var(--accent-blue);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
+  background: #3b82f6 !important;
+  color: white !important;
+  border: 1px solid #3b82f6 !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
   transition: all 0.2s ease;
+  min-width: 80px;
+  display: inline-block !important;
+  text-align: center !important;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-blue-dark);
+  background: #2563eb;
 }
 
 .btn-primary:disabled {
@@ -700,16 +730,19 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .modal-content {
   background: var(--bg-card);
   border-radius: 12px;
-  width: 90%;
+  width: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  margin: auto;
 }
 
 .modal-header {
@@ -718,6 +751,10 @@ onMounted(() => {
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 10;
 }
 
 .modal-header h3 {
@@ -767,6 +804,7 @@ onMounted(() => {
   background: var(--bg-content);
   color: var(--text-primary);
   font-size: 14px;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -793,25 +831,47 @@ onMounted(() => {
   gap: 12px;
   justify-content: flex-end;
   margin-top: 24px;
-  padding-top: 20px;
+  padding: 20px;
   border-top: 1px solid var(--border-light);
+  background: rgba(0, 0, 0, 0.02);
 }
 
-/* Responsive for activities table */
-@media (max-width: 1280px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-tab {
+    padding: 16px;
   }
   
-  .table-header > div,
-  .table-row > div {
-    padding: 4px 0;
+  .data-table {
+    font-size: 14px;
   }
   
-  .col-actions {
-    justify-content: flex-start;
+  .data-table th,
+  .data-table td {
+    padding: 12px 8px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .btn-edit, .btn-delete {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .modal-content {
+    margin: 20px;
+    max-width: none;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
   }
 }
 </style>
