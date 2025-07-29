@@ -104,13 +104,13 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .weather-icon {
-  font-size: 60px;
+  font-size: 50px;
   margin-bottom: 0px;
   text-align: center;
 }
 
 .weather-desc {
-  font-size: 24px;
+  font-size: 20px;
   color: var(--text-white);
   margin-bottom: 10px;
   text-align: center;
@@ -123,7 +123,7 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .temp-high, .temp-low {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -137,7 +137,7 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .weather-details {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--text-white);
   line-height: 1.6;
   margin-bottom: 5px;
@@ -146,7 +146,7 @@ function getWeatherEmoji(iconCode: string) {
 .forecast-section {
   border-top: 1px solid var(--border-weather);
   padding-top: 10px;
-  padding-bottom: 30px;
+  padding-bottom: 10px;
 }
 
 .forecast-day {

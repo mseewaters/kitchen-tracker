@@ -200,3 +200,4 @@ class RecurringActivity:
     
     def __repr__(self) -> str:
         return f"RecurringActivity(id={self.activity_id}, name='{self.name}', frequency='{self.frequency}')"
+    

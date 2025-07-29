@@ -187,3 +187,82 @@ class RecurringActivityRepository(BaseRepository):
                 return False
             print(f"Error deleting activity {activity_id}: {e}")
             return False
+        
+    def get_by_member_id(self, member_id: str, household_id: str) -> List[RecurringActivity]:
+        """Get all activities assigned to a specific member"""
+        try:
+            response = self.table.scan(
+                FilterExpression='household_id = :household_id AND assigned_to = :member_id AND is_active = :is_active',
+                ExpressionAttributeValues={
+                    ':household_id': household_id,
+                    ':member_id': member_id,
+                    ':is_active': True
+                }
+            )
+            
+            activities = []
+            for item in response.get('Items', []):
+                activities.append(RecurringActivity.from_dict(item))
+            
+            # Sort by name
+            activities.sort(key=lambda a: a.name.lower())
+            return activities
+            
+        except ClientError as e:
+            print(f"Error getting activities for member {member_id}: {e}")
+            return []
+        
+    def get_by_member_id(self, member_id: str, household_id: str) -> List[RecurringActivity]:
+        """Get all activities assigned to a specific member"""
+        try:
+            response = self.table.scan(
+                FilterExpression='household_id = :household_id AND assigned_to = :member_id AND is_active = :is_active',
+                ExpressionAttributeValues={
+                    ':household_id': household_id,
+                    ':member_id': member_id,
+                    ':is_active': True
+                }
+            )
+            
+            activities = []
+            for item in response.get('Items', []):
+                activities.append(RecurringActivity.from_dict(item))
+            
+            activities.sort(key=lambda a: a.name.lower())
+            return activities
+            
+        except ClientError as e:
+            print(f"Error getting activities for member {member_id}: {e}")
+            return []
+
+    def update(self, activity: RecurringActivity) -> RecurringActivity:
+        """Update an existing activity"""
+        try:
+            item = activity.to_dict()
+            self.table.put_item(
+                Item=item,
+                ConditionExpression='attribute_exists(activity_id)'
+            )
+            return activity
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                raise ValueError(f"Activity with ID {activity.activity_id} does not exist")
+            raise e
+        
+    
+    def soft_delete(self, activity_id: str) -> bool:
+        """Soft delete an activity by setting is_active to False"""
+        try:
+            self.table.update_item(
+                Key={'activity_id': activity_id},
+                UpdateExpression='SET is_active = :is_active',
+                ExpressionAttributeValues={':is_active': False},
+                ConditionExpression='attribute_exists(activity_id)'
+            )
+            return True
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                print(f"Activity with ID {activity_id} does not exist")
+                return False
+            print(f"Error soft deleting activity {activity_id}: {e}")
+            return False

@@ -181,3 +181,12 @@ class ActivityCompletionRepository(BaseRepository):
                 deleted_count += 1
         
         return deleted_count
+    
+    def get_latest_completion(self, activity_id: str, target_date: date = None) -> Optional[ActivityCompletion]:
+        """Get the most recent completion for a specific activity"""
+        completions = self.get_by_activity_id(activity_id, limit=1)
+        return completions[0] if completions else None
+    
+    def get_latest_completion_for_activity(self, activity_id: str) -> Optional[ActivityCompletion]:
+        """Get the most recent completion for a specific activity (alias)"""
+        return self.get_latest_completion(activity_id)

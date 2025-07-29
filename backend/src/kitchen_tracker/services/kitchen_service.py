@@ -88,32 +88,36 @@ class KitchenService:
         return result
     
     def get_activity_status(self, activity_id: str) -> Optional[ActivityStatus]:
-        """Get activity with current status"""
+        """Get the current status of an activity with completion context"""
         activity = self.get_activity(activity_id)
         if not activity:
             return None
         
-        today = date.today()
-        completion = self.completion_repo.get_latest_completion(activity_id, today)
+        # Get the most recent completion (without target_date parameter)
+        latest_completion = self.completion_repo.get_latest_completion_for_activity(activity_id)
         
-        return ActivityStatus(
-            activity=activity,
-            last_completion=completion,
-            target_date=today
-        )
+        # Get the member name
+        member = self.get_family_member(activity.assigned_to)
+        member_name = member.name if member else "Unknown"
+        
+        return ActivityStatus(activity, latest_completion, member_name)
     
     def complete_activity(self, activity_id: str, completed_by: str = None, 
-                         completion_date: date = None, notes: str = None) -> ActivityCompletion:
+                        completion_date: str = None, notes: str = None) -> ActivityCompletion:
         """Mark an activity as completed"""
-        completion_date = completion_date or date.today()
+        # Get the activity to find the assigned member and household
+        activity = self.get_activity(activity_id)
+        if not activity:
+            raise ValueError(f"Activity {activity_id} not found")
         
         completion = ActivityCompletion(
             activity_id=activity_id,
-            completion_date=completion_date,
-            completed_by=completed_by,
+            member_id=activity.assigned_to,  # Use the assigned member
+            household_id=activity.household_id,  # Use the activity's household
+            completion_date=completion_date or date.today().isoformat(),
+            completed_by=completed_by or activity.assigned_to,  # Default to assigned member
             notes=notes
         )
-        
         return self.completion_repo.create(completion)
     
     def undo_activity_completion(self, activity_id: str, completion_date: date = None) -> bool:
@@ -194,3 +198,23 @@ class KitchenService:
         """Get activities completed today"""
         activities_with_status = self.get_activities_with_status(household_id)
         return [a for a in activities_with_status if a.get('status') == 'completed']
+    
+    
+    def get_activities_due_today(self, household_id: str) -> List[Dict[str, Any]]:
+        """Get all activities that are due today"""
+        activities_with_status = self.get_activities_with_status(household_id)
+        return [a for a in activities_with_status if a.get('is_due_today', False)]
+
+    def get_overdue_activities(self, household_id: str) -> List[Dict[str, Any]]:
+        """Get all activities that are overdue"""
+        activities_with_status = self.get_activities_with_status(household_id)
+        return [a for a in activities_with_status if a.get('is_overdue', False)]
+
+    def get_completed_activities_today(self, household_id: str) -> List[Dict[str, Any]]:
+        """Get all activities completed today"""
+        activities_with_status = self.get_activities_with_status(household_id)
+        return [a for a in activities_with_status if a.get('status') == 'completed']
+
+    def delete_activity(self, activity_id: str) -> bool:
+        """Soft delete an activity"""
+        return self.activity_repo.soft_delete(activity_id)
