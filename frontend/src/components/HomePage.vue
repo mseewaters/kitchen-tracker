@@ -38,9 +38,8 @@
           <p>Meal tracking functionality will be implemented here.</p>
         </div>
         
-        <div v-else-if="activeTab === 'Add tasks'" class="tab-content">
-          <h2>Add Tasks Coming Soon</h2>
-          <p>Task creation functionality will be implemented here.</p>
+        <div v-else-if="activeTab === 'Add tasks'" class="tab-content admin-tab-content">
+          <AdminTab />
         </div>
       </div>
     </div>
@@ -53,6 +52,7 @@ import { storeToRefs } from 'pinia'
 import WeatherSidebar from './WeatherSidebar.vue'
 import TabNavigation from './TabNavigation.vue'
 import FamilyCard from './FamilyCard.vue'
+import AdminTab from './AdminTab.vue'
 import { useKitchenStore } from '../stores/kitchen'
 
 const store = useKitchenStore()
@@ -147,6 +147,12 @@ onUnmounted(() => {
   justify-content: center;
   height: 100%;
   color: var(--text-primary);
+}
+
+.admin-tab-content {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
 }
 
 .tab-content h2 {

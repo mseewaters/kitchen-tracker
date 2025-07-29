@@ -111,7 +111,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
       
       const familyData = await response.json()
       
-      familyMembers.value = familyData.map((member: any) => ({
+      familyMembers.value = familyData.map((member: FamilyMember) => ({
         member_id: member.member_id,
         name: member.name,
         member_type: member.member_type,
@@ -122,7 +122,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
         activities: []
       }))
         
-    } catch (err) {
+    } catch {
       console.warn('API not available, using mock data for family members')
       // Mock data for development
       familyMembers.value = [
@@ -210,7 +210,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
           member.activities.push(activityObj)
         }
       }
-    } catch (err) {
+    } catch {
       console.warn('API not available, using mock data for activities')
       // Add some mock activities to the family members
       const mockActivities = {
@@ -334,7 +334,7 @@ export const useKitchenStore = defineStore('kitchen', () => {
       }
       
       // Next 5 days forecast (skip today, take next 5)
-      weather.value.forecast = data.daily.slice(1, 6).map((day: any, index: number) => ({
+      weather.value.forecast = data.daily.slice(1, 6).map((day: { dt: number; temp: { max: number; min: number }; weather: Array<{ icon: string; description: string }> }, index: number) => ({
         date: new Date(day.dt * 1000).toISOString().split('T')[0],
         dayName: getDayName(new Date(day.dt * 1000).toISOString(), index + 1),
         tempMax: Math.round(day.temp.max),
