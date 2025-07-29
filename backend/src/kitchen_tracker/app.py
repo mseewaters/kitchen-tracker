@@ -47,7 +47,8 @@ app.add_middleware(
         "http://localhost:5175",
         "http://localhost:5176",
         "http://localhost:3000",
-        "https://main.d2ku093eyfpjks.amplifyapp.com",
+        "https://main.d2d1lfimravh2k.amplifyapp.com",
+        "https://dev.d2d1lfimravh2k.amplifyapp.com",
         "*"  # Allow all origins for now - restrict in production
     ],
     allow_credentials=True,
@@ -385,10 +386,5 @@ def lambda_handler(event, context):
         print(f"Handler error: {e}")
         return {
             "statusCode": 500, 
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Methods": "*"
-            },
             "body": json.dumps({"error": f"Handler error: {str(e)}"})
         }
