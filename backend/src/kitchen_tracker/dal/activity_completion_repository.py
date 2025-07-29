@@ -1,9 +1,21 @@
 from typing import List, Optional
 from datetime import date, datetime, timedelta
 import boto3
+
+# Import with fallback for Lambda environment
+try:
+    from ..models.activity_completion import ActivityCompletion
+except ImportError:
+    # Lambda environment - use absolute imports
+    from models.activity_completion import ActivityCompletion
+try:
+    from .base_repository import BaseRepository
+except ImportError:
+    # Lambda environment - use absolute imports
+    from dal.base_repository import BaseRepository
 from botocore.exceptions import ClientError
-from ..models.activity_completion import ActivityCompletion
-from .base_repository import BaseRepository
+
+
 
 class ActivityCompletionRepository(BaseRepository):
     def __init__(self):

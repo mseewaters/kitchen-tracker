@@ -1,8 +1,15 @@
 from typing import List, Optional
 import boto3
 from botocore.exceptions import ClientError
-from ..models.family_member import FamilyMember
-from .base_repository import BaseRepository
+
+# Import helper for Lambda environment
+try:
+    from ..models.family_member import FamilyMember
+    from .base_repository import BaseRepository
+except ImportError:
+    # Lambda environment - use absolute imports
+    from models.family_member import FamilyMember
+    from dal.base_repository import BaseRepository
 
 class FamilyMemberRepository(BaseRepository):
     def __init__(self):
@@ -121,31 +128,13 @@ class FamilyMemberRepository(BaseRepository):
     def soft_delete(self, member_id: str) -> bool:
         """Soft delete a family member by setting is_active to False"""
         try:
-            self.table.update_item(
-                Key={'member_id': member_id},
-                UpdateExpression='SET is_active = :is_active',
-                ExpressionAttributeValues={':is_active': False},
-                ConditionExpression='attribute_exists(member_id)'
-            )
-            return True
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                print(f"Family member with ID {member_id} does not exist")
+            member = self.get_by_id(member_id)
+            if not member:
                 return False
+            
+            member.is_active = False
+            self.update(member)
+            return True
+        except Exception as e:
             print(f"Error soft deleting family member {member_id}: {e}")
-            return False
-    
-    def delete(self, member_id: str) -> bool:
-        """Hard delete a family member (use with caution)"""
-        try:
-            self.table.delete_item(
-                Key={'member_id': member_id},
-                ConditionExpression='attribute_exists(member_id)'
-            )
-            return True
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                print(f"Family member with ID {member_id} does not exist")
-                return False
-            print(f"Error deleting family member {member_id}: {e}")
             return False

@@ -1,8 +1,20 @@
 from typing import List, Optional
 import boto3
+
+# Import with fallback for Lambda environment
+try:
+    from ..models.recurring_activity import RecurringActivity
+except ImportError:
+    # Lambda environment - use absolute imports
+    from models.recurring_activity import RecurringActivity
+try:
+    from .base_repository import BaseRepository
+except ImportError:
+    # Lambda environment - use absolute imports
+    from dal.base_repository import BaseRepository
 from botocore.exceptions import ClientError
-from ..models.recurring_activity import RecurringActivity
-from .base_repository import BaseRepository
+
+
 
 class RecurringActivityRepository(BaseRepository):
     def __init__(self):

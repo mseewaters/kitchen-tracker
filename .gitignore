@@ -37,6 +37,7 @@ htmlcov/
 # AWS
 .aws/
 *.pem
+.aws-sam/
 
 # IDE
 .vscode/settings.json
