@@ -157,14 +157,17 @@ def lambda_handler(event, context):
     try:
         from mangum import Mangum
         
-        # Configure Mangum to strip the API Gateway stage from the path
-        handler = Mangum(app, api_gateway_base_path="/Prod")
-        return handler(event, context)
+        # Create Mangum handler - don't specify api_gateway_base_path
+        handler = Mangum(app)
+        result = handler(event, context)
+        print(f"Mangum result: {result}")  # Debug the response
+        return result
     except Exception as e:
         print(f"Handler error: {e}")
         import traceback
         traceback.print_exc()
         return {
             "statusCode": 500, 
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"error": f"Handler error: {str(e)}"})
         }
