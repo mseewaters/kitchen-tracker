@@ -6,11 +6,27 @@ from datetime import date, datetime
 import json
 import os
 
-# Import your existing models and services
-from models.family_member import FamilyMember  
-from models.recurring_activity import RecurringActivity
-from models.activity_completion import ActivityCompletion
-from services.kitchen_service import KitchenService
+print("Starting app.py module...")  # Debug
+
+# Import your existing models and services (works in both Lambda and test environments)
+try:
+    # Try absolute imports first (works in Lambda)
+    print("Trying absolute imports...")
+    from models.family_member import FamilyMember  
+    from models.recurring_activity import RecurringActivity
+    from models.activity_completion import ActivityCompletion
+    from services.kitchen_service import KitchenService
+    print("Absolute imports successful!")
+except ImportError as e:
+    # Fall back to relative imports (works in tests)
+    print(f"Absolute imports failed: {e}")
+    print("Trying relative imports...")
+    from .models.family_member import FamilyMember  
+    from .models.recurring_activity import RecurringActivity
+    from .models.activity_completion import ActivityCompletion
+    from .services.kitchen_service import KitchenService
+    print("Relative imports successful!")
+
 from pydantic import BaseModel
 
 # Initialize FastAPI
@@ -353,5 +369,26 @@ async def get_completed_activities_today(household_id: str = Query(default="defa
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Lambda handler using Mangum - this is what SAM will call
-lambda_handler = Mangum(app)
+# Lambda handler for AWS
+def lambda_handler(event, context):
+    """AWS Lambda handler"""
+    print(f"Received event: {event}")  # Debug logging
+    print(f"Path from API Gateway: {event.get('path', 'NO PATH')}")
+    print(f"Raw path: {event.get('rawPath', 'NO RAW PATH')}")
+    try:
+        from mangum import Mangum
+        
+        # Configure Mangum to strip the API Gateway stage from the path
+        handler = Mangum(app, api_gateway_base_path="/Prod")
+        return handler(event, context)
+    except Exception as e:
+        print(f"Handler error: {e}")
+        return {
+            "statusCode": 500, 
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "*"
+            },
+            "body": json.dumps({"error": f"Handler error: {str(e)}"})
+        }
