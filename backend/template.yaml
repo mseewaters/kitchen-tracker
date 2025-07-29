@@ -21,11 +21,6 @@ Globals:
         ACTIVITY_COMPLETIONS_TABLE: !Ref ActivityCompletionsTable
         HOUSEHOLD_ID: !Sub "${AWS::StackName}-household"
         ENVIRONMENT: !Ref Environment
-  Api:
-    Cors:
-      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
 
 Resources:
   ApiFunction:

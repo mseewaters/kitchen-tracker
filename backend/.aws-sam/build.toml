@@ -5,7 +5,7 @@ codeuri = "C:\\Users\\see_w\\Dev\\Projects\\kitchen-tracker\\backend\\src\\kitch
 runtime = "python3.13"
 architecture = "x86_64"
 handler = "app.lambda_handler"
-manifest_hash = ""
+manifest_hash = "931bd3d32669c1fc92e2d8c431890f81"
 packagetype = "Zip"
 functions = ["ApiFunction", "EmailProcessorFunction"]
 
