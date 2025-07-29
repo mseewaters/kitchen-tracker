@@ -11,13 +11,15 @@
       <!-- Content Area -->
       <div class="content-area">
         <div v-if="activeTab === 'Activities'" class="family-grid">
-          <!-- Top Row: People -->
-          <FamilyCard
-            v-for="person in people"
-            :key="person.member_id"
-            :member="person"
-            @toggle-activity="handleToggleActivity"
-          />
+          <!-- Top Row: People in halves -->
+          <div class="people-row">
+            <FamilyCard
+              v-for="person in people"
+              :key="person.member_id"
+              :member="person"
+              @toggle-activity="handleToggleActivity"
+            />
+          </div>
           
           <!-- Bottom Row: Pets in thirds -->
           <div class="pets-container">
@@ -104,24 +106,38 @@ onUnmounted(() => {
 
 .content-area {
   flex: 1;
-  padding: 24px;
-  overflow-y: auto;
+  padding: 20px;
+  overflow: hidden;
   background: var(--bg-content);
+  display: flex;
+  flex-direction: column;
 }
 
 .family-grid {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+  max-height: calc(800px - 120px); /* Fixed height for 800px tablet minus navigation/padding */
+}
+
+.people-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 50% 50%;
   gap: 16px;
-  height: 100%;
+  height: 320px; /* Fixed height for people cards */
 }
 
 .pets-container {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
   gap: 16px;
+  height: 320px; /* Fixed height for pet cards, matching people row */
+}
+
+.pets-container > .family-card {
+  width: 100%;
+  height: 100%;
 }
 
 .tab-content {

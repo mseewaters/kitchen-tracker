@@ -4,26 +4,15 @@
 /* CSS Foundation - Design System Variables & Reset */
 
 :root {
-  /* ===== BRAND COLORS ===== */
-  --charcoal-dark: #1C1C1E;
-  --charcoal-medium: #40454B;
-  --gray-cool: #B0B0B0;
-  --gray-placeholder: #9CA3AF;
-  --white-off: #F9FAFB;
-  --yellow-safety: #E6FF00;
-  --blue-cyan: #00BFFF;
-  --green-success: #22C55E;
-  --red-alert: #EF4444;
-
   /* ===== KITCHEN TRACKER THEME COLORS ===== */
   --bg-body: #e5e5e5;
   --bg-container: white;
-  --bg-sidebar: #2c3e50;
-  --bg-tab-nav: #34495e;
-  --bg-tab-active: #B85450;
+  --bg-sidebar: #303838;
+  --bg-tab-nav: #434B4B;
+  --bg-tab-active: #d25151;
   --bg-content: #ecf0f1;
   --bg-card: white;
-  --bg-weather-section: rgba(255,255,255,0.1);
+  --bg-weather-section: #434B4B;
   
   --text-white: white;
   --text-white-muted: rgba(255,255,255,0.8);
@@ -33,12 +22,12 @@
   --text-muted: #555;
   --text-light: #666;
   
-  --accent-red: #e74c3c;
+  --accent-red: #C40C0C;
   --accent-success: #95A985;
-  --accent-gradient-m: linear-gradient(135deg, #B85450, #D86A6A);
-  --accent-gradient-b: linear-gradient(135deg, #2563eb, #3b82f6);
-  --accent-gradient-l: linear-gradient(135deg, #dc3545, #e74c3c);
-  --accent-gradient-s: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  --accent-gradient-m: linear-gradient(135deg, #C40C0C, #d25151);
+  --accent-gradient-b: linear-gradient(135deg, #C40C0C, #d25151);
+  --accent-gradient-l: linear-gradient(135deg, #C40C0C, #d25151);
+  --accent-gradient-s: linear-gradient(135deg, #C40C0C, #d25151);
   --accent-card-top: linear-gradient(90deg, #B85450, #95A985, #9CAAB6);
   
   --border-light: #e8eaed;

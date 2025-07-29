@@ -103,15 +103,13 @@ const progressOffset = computed(() => {
   background: var(--accent-card-top);
 }
 
-.family-card.pets-row {
-  grid-column: span 1;
-}
+/* Removed pets-row class - no longer needed */
 
 .family-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: 10px 20px 10px;
   border-bottom: 1px solid var(--border-divider);
   flex-shrink: 0;
 }
@@ -193,8 +191,8 @@ const progressOffset = computed(() => {
 .task-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px 20px;
+  gap: 8px;
+  padding: 10px 10px;
   flex: 1;
   overflow-y: auto;
 }

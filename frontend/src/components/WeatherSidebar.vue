@@ -2,8 +2,7 @@
   <div class="sidebar">
     <div class="datetime-section">
       <div class="day-date">{{ currentDayName }}, {{ currentMonth }} {{ currentDay }}</div>
-      <div class="time-display">{{ formatTime(currentTime) }}</div>
-      <div class="period">{{ formatPeriod(currentTime) }}</div>
+      <div class="time-display">{{ currentTime }}</div>
     </div>
     
     <div class="weather-section">
@@ -29,8 +28,8 @@
             :key="day.date"
             class="forecast-day"
           >
-            <div class="forecast-name">{{ day.dayName }}</div>
             <div class="forecast-icon">{{ getWeatherEmoji(day.icon) }}</div>
+            <div class="forecast-name">{{ day.dayName }}</div>
             <div class="forecast-temps">H: {{ day.tempMax }} L: {{ day.tempMin }}</div>
           </div>
         </div>
@@ -45,17 +44,6 @@ import { useKitchenStore } from '../stores/kitchen'
 
 const store = useKitchenStore()
 const { currentTime, currentDayName, currentDay, currentMonth, weather } = storeToRefs(store)
-
-function formatTime(timeStr: string) {
-  if (!timeStr) return ''
-  return timeStr.replace(/\s?(AM|PM)/, '')
-}
-
-function formatPeriod(timeStr: string) {
-  if (!timeStr) return ''
-  const match = timeStr.match(/(AM|PM)/)
-  return match ? match[1] : ''
-}
 
 function getWeatherEmoji(iconCode: string) {
   const iconMap: { [key: string]: string } = {
@@ -96,23 +84,18 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .time-display {
-  font-size: 48px;
+  font-size: 40px;
   font-weight: 700;
-  color: var(--accent-red);
+  color: var(--text-white);
+  text-shadow: 1px 1px 4px var(--accent-red);
   margin-bottom: 4px;
   line-height: 1;
-}
-
-.period {
-  font-size: 20px;
-  color: var(--accent-red);
-  font-weight: 600;
 }
 
 .weather-section {
   background: var(--bg-weather-section);
   border-radius: 12px;
-  padding: 24px 20px;
+  padding: 10px 10px;
   backdrop-filter: blur(10px);
   flex: 1;
   display: flex;
@@ -121,26 +104,26 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .weather-icon {
-  font-size: 40px;
-  margin-bottom: 16px;
+  font-size: 60px;
+  margin-bottom: 0px;
   text-align: center;
 }
 
 .weather-desc {
-  font-size: 14px;
-  color: var(--text-white-muted);
-  margin-bottom: 20px;
+  font-size: 24px;
+  color: var(--text-white);
+  margin-bottom: 10px;
   text-align: center;
   line-height: 1.4;
   text-transform: capitalize;
 }
 
 .temp-section {
-  margin-bottom: 20px;
+  margin-bottom: 0px;
 }
 
 .temp-high, .temp-low {
-  font-size: 16px;
+  font-size: 24px;
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -150,19 +133,20 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .temp-low {
-  color: var(--text-white-muted);
+  color: var(--text-white);
 }
 
 .weather-details {
-  font-size: 14px;
-  color: var(--text-white-muted);
+  font-size: 18px;
+  color: var(--text-white);
   line-height: 1.6;
-  margin-bottom: 24px;
+  margin-bottom: 5px;
 }
 
 .forecast-section {
   border-top: 1px solid var(--border-weather);
-  padding-top: 16px;
+  padding-top: 10px;
+  padding-bottom: 30px;
 }
 
 .forecast-day {
@@ -170,7 +154,7 @@ function getWeatherEmoji(iconCode: string) {
   align-items: center;
   justify-content: space-between;
   padding: 6px 0;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .forecast-name {
@@ -181,7 +165,7 @@ function getWeatherEmoji(iconCode: string) {
 
 .forecast-icon {
   font-size: 18px;
-  margin: 0 8px;
+  margin: 0 0px;
 }
 
 .forecast-temps {

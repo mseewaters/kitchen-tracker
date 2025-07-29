@@ -31,11 +31,11 @@ const tabs = ['Activities', 'Meals', 'Add tasks']
 
 .tab-button {
   flex: 1;
-  padding: 16px 24px;
+  padding: 10px 24px;
   border: none;
   background: none;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 24px;
+  font-weight: 700;
   color: var(--text-white-light);
   cursor: pointer;
   border-bottom: 3px solid transparent;

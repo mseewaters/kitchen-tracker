@@ -49,7 +49,7 @@ defineEmits<{
 
 function getTimeDisplay() {
   if (props.activity.is_completed) {
-    return 'Just completed'
+    return 'Completed'
   }
   if (props.activity.is_overdue) {
     return 'Overdue'
@@ -62,7 +62,7 @@ function getTimeDisplay() {
 .task-item {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 10px;
   border-radius: 8px;
   border: 1px solid var(--border-light);
   transition: var(--transition-normal);
