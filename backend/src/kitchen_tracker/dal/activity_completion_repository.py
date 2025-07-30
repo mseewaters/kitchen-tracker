@@ -51,20 +51,20 @@ class ActivityCompletionRepository(BaseRepository):
     def get_by_activity_id(self, activity_id: str, limit: int = 50) -> List[ActivityCompletion]:
         """Get completion records for a specific activity"""
         try:
-            response = self.table.scan(
-                FilterExpression='activity_id = :activity_id',
+            response = self.table.query(
+                IndexName='ActivityIndex',
+                KeyConditionExpression='activity_id = :activity_id',
                 ExpressionAttributeValues={
                     ':activity_id': activity_id
                 },
-                Limit=limit
+                Limit=limit,
+                ScanIndexForward=False  # Sort by completion_date descending (most recent first)
             )
             
             completions = []
             for item in response.get('Items', []):
                 completions.append(ActivityCompletion.from_dict(item))
             
-            # Sort by completion date descending (most recent first)
-            completions.sort(key=lambda c: c.completion_date, reverse=True)
             return completions
             
         except ClientError as e:
@@ -128,8 +128,9 @@ class ActivityCompletionRepository(BaseRepository):
     def get_completion_for_activity_and_date(self, activity_id: str, completion_date: str) -> Optional[ActivityCompletion]:
         """Get completion record for a specific activity on a specific date"""
         try:
-            response = self.table.scan(
-                FilterExpression='activity_id = :activity_id AND completion_date = :completion_date',
+            response = self.table.query(
+                IndexName='ActivityIndex',
+                KeyConditionExpression='activity_id = :activity_id AND completion_date = :completion_date',
                 ExpressionAttributeValues={
                     ':activity_id': activity_id,
                     ':completion_date': completion_date

@@ -153,11 +153,14 @@ export const useKitchenStore = defineStore('kitchen', () => {
             frequency: activity.frequency,
             status: activity.status,
             is_overdue: activity.is_overdue,
-            is_completed: activity.is_completed,
+            is_completed: activity.completed,
             category: activity.category || 'general'
           }
           
           member.activities.push(activityObj)
+
+          console.log('Activity from API:', activity)
+          console.log('Mapped to frontend:', activityObj)
         }
       }
     } catch {
@@ -184,43 +187,58 @@ export const useKitchenStore = defineStore('kitchen', () => {
       
       if (!activity) return
       
+      // Store original state for rollback
+      const originalCompleted = activity.is_completed
+      const originalStatus = activity.status
+      const originalOverdue = activity.is_overdue
+      
       // Update locally first for immediate UI feedback
-      const wasCompleted = activity.is_completed
       activity.is_completed = !activity.is_completed
       activity.status = activity.is_completed ? 'completed' : 'due'
       if (activity.is_completed) {
         activity.is_overdue = false
       }
       
-      // Update on server
+      // Determine endpoint and method
       const endpoint = activity.is_completed 
         ? `${apiBaseUrl}/activities/${activityId}/complete`
         : `${apiBaseUrl}/activities/${activityId}/undo`
       
+      const method = activity.is_completed ? 'POST' : 'DELETE'
+      
       const response = await fetch(endpoint, {
-        method: activity.is_completed ? 'POST' : 'DELETE',  // POST for complete, DELETE for undo
+        method: method,
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           completion_date: new Date().toISOString().split('T')[0],
-          completed_by: "user",
-          notes: ""
+          completed_by: "Household Member",
+          notes: `Task ${activity.is_completed ? 'completed' : 'undone'} via kitchen tracker`
         })
       })
       
       if (!response.ok) {
         // Revert local change if server update failed
-        activity.is_completed = wasCompleted
-        activity.status = wasCompleted ? 'completed' : 'due'
-        throw new Error('Failed to update activity')
+        activity.is_completed = originalCompleted
+        activity.status = originalStatus
+        activity.is_overdue = originalOverdue
+        
+        const errorText = await response.text()
+        console.error('API Error:', response.status, errorText)
+        throw new Error(`Failed to update activity: ${response.status} ${errorText}`)
       }
+      
+      // Optionally refresh activities to get the true server state
+      // await fetchActivities()
       
     } catch (err) {
       console.error('Error toggling activity:', err)
       error.value = 'Failed to update activity'
     }
   }
+  
+  //End toggle
 
   function getCompletionStats(memberId: string) {
     const member = familyMembers.value.find(m => m.member_id === memberId)

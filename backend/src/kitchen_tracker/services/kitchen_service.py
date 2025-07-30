@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict, Any
 from datetime import date, datetime
+from ..utils.timezone_utils import get_local_date_string
 
 # Import with fallback for Lambda environment
 try:
@@ -114,16 +115,26 @@ class KitchenService:
             activity_id=activity_id,
             member_id=activity.assigned_to,  # Use the assigned member
             household_id=activity.household_id,  # Use the activity's household
-            completion_date=completion_date or date.today().isoformat(),
+            completion_date=completion_date or get_local_date_string(),
             completed_by=completed_by or activity.assigned_to,  # Default to assigned member
             notes=notes
         )
         return self.completion_repo.create(completion)
     
-    def undo_activity_completion(self, activity_id: str, completion_date: date = None) -> bool:
+    def undo_activity_completion(self, activity_id: str, completion_date: str = None) -> bool:
         """Undo the most recent completion for an activity"""
-        completion_date = completion_date or date.today()
-        return self.completion_repo.delete_completion(activity_id, completion_date)
+        if completion_date:
+            # Find completion by activity_id and specific date
+            completion = self.completion_repo.get_completion_for_activity_and_date(activity_id, completion_date)
+        else:
+            # Get the most recent completion for this activity
+            completion = self.completion_repo.get_latest_completion_for_activity(activity_id)
+        
+        if not completion:
+            return False
+        
+        # Delete the completion record using its completion_id
+        return self.completion_repo.delete_completion(completion.completion_id)
     
     # Dashboard and Summary Operations
     def get_dashboard_data(self, household_id: str) -> Dict[str, Any]:
