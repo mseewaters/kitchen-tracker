@@ -198,11 +198,15 @@ export const useKitchenStore = defineStore('kitchen', () => {
         : `${apiBaseUrl}/activities/${activityId}/undo`
       
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: activity.is_completed ? 'POST' : 'DELETE',  // POST for complete, DELETE for undo
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          completion_date: new Date().toISOString().split('T')[0],
+          completed_by: "user",
+          notes: ""
+        })
       })
       
       if (!response.ok) {

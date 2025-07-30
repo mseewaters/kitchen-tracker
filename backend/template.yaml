@@ -122,12 +122,22 @@ Resources:
           Properties:
             Path: /activities/{activity_id}/complete
             Method: POST
+        ActivityCompleteOptions:
+          Type: Api
+          Properties:
+            Path: /activities/{activity_id}/complete
+            Method: OPTIONS
         ActivityUndo:
           Type: Api
           Properties:
             Path: /activities/{activity_id}/undo
-            Method: POST
-
+            Method: DELETE  # Changed from POST to DELETE
+        ActivityUndoOptions:
+          Type: Api
+          Properties:
+            Path: /activities/{activity_id}/undo
+            Method: OPTIONS    
+                             
         # NEW Dashboard and Summary endpoints
         Dashboard:
           Type: Api

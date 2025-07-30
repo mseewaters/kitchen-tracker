@@ -296,7 +296,7 @@ async def complete_activity(activity_id: str, completion: ActivityCompletionRequ
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/activities/{activity_id}/undo")
+@app.delete("/activities/{activity_id}/undo")  # Changed from @app.post
 async def undo_activity_completion(activity_id: str, completion: ActivityCompletionRequest):
     """Undo an activity completion"""
     try:
