@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from datetime import date, datetime
-from ..utils.timezone_utils import get_local_date_string
+
 
 # Import with fallback for Lambda environment
 try:
@@ -115,7 +115,7 @@ class KitchenService:
             activity_id=activity_id,
             member_id=activity.assigned_to,  # Use the assigned member
             household_id=activity.household_id,  # Use the activity's household
-            completion_date=completion_date or get_local_date_string(),
+            completion_date=completion_date or date.today().isoformat(),
             completed_by=completed_by or activity.assigned_to,  # Default to assigned member
             notes=notes
         )
