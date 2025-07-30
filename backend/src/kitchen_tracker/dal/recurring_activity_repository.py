@@ -50,10 +50,8 @@ class RecurringActivityRepository(BaseRepository):
     def get_by_household_id(self, household_id: str) -> List[RecurringActivity]:
         """Get all activities for a household"""
         try:
-            response = self.table.query(
-                IndexName='HouseholdIndex',
-                KeyConditionExpression='household_id = :household_id',
-                FilterExpression='is_active = :is_active',
+            response = self.table.scan(
+                FilterExpression='household_id = :household_id AND is_active = :is_active',
                 ExpressionAttributeValues={
                     ':household_id': household_id,
                     ':is_active': True
@@ -75,13 +73,11 @@ class RecurringActivityRepository(BaseRepository):
     def get_by_member_id(self, member_id: str, household_id: str) -> List[RecurringActivity]:
         """Get all activities assigned to a specific family member"""
         try:
-            response = self.table.query(
-                IndexName='AssignedToIndex',
-                KeyConditionExpression='assigned_to = :member_id',
-                FilterExpression='household_id = :household_id AND is_active = :is_active',
+            response = self.table.scan(
+                FilterExpression='household_id = :household_id AND assigned_to = :member_id AND is_active = :is_active',
                 ExpressionAttributeValues={
-                    ':member_id': member_id,
                     ':household_id': household_id,
+                    ':member_id': member_id,
                     ':is_active': True
                 }
             )
@@ -97,6 +93,7 @@ class RecurringActivityRepository(BaseRepository):
         except ClientError as e:
             print(f"Error getting activities for member {member_id}: {e}")
             return []
+    
     
     def get_by_category(self, household_id: str, category: str) -> List[RecurringActivity]:
         """Get all activities in a specific category"""

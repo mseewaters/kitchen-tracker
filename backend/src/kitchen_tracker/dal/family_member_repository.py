@@ -45,10 +45,8 @@ class FamilyMemberRepository(BaseRepository):
     def get_by_household_id(self, household_id: str) -> List[FamilyMember]:
         """Get all family members for a household"""
         try:
-            response = self.table.query(
-                IndexName='HouseholdIndex',
-                KeyConditionExpression='household_id = :household_id',
-                FilterExpression='is_active = :is_active',
+            response = self.table.scan(
+                FilterExpression='household_id = :household_id AND is_active = :is_active',
                 ExpressionAttributeValues={
                     ':household_id': household_id,
                     ':is_active': True
