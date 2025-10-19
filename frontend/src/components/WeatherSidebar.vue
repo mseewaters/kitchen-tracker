@@ -66,13 +66,13 @@ function getWeatherEmoji(iconCode: string) {
   width: var(--sidebar-width);
   background: var(--bg-sidebar);
   color: var(--text-white);
-  padding: 24px 20px;
+  padding: 15px 15px;
   display: flex;
   flex-direction: column;
 }
 
 .datetime-section {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   text-align: center;
 }
 
@@ -84,7 +84,7 @@ function getWeatherEmoji(iconCode: string) {
 }
 
 .time-display {
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 700;
   color: var(--text-white);
   text-shadow: 1px 1px 4px var(--accent-red);
